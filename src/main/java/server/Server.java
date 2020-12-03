@@ -31,7 +31,7 @@ public class Server {
         List<String> messages = new ArrayList<>();
 
         ServerSocket listener = new ServerSocket(0);
-
+        System.out.println(listener.getLocalPort());
         Scanner sc = new Scanner(System.in);
         System.out.println("What is your username?");
         String userName = sc.nextLine();
@@ -49,8 +49,12 @@ public class Server {
         }
 
 
+        String JSON = "{\"ip\" : \"10.8.0.2\",\"port\":1115,\"name\":\"asd\",\"hopCount\":0,\"outPort\":-1}";
         routingTable = new RoutingTable(localIp, listener.getLocalPort(), userName);
-        String[] details = userName.split(":");
+        routingTable.addEntry(Map.entry("10.8.0.5:645", RoutingEntry.getRoutingEntryFromJSON(JSON)));
+
+        String[] details = neighbour.split(":");
+        System.out.println("Details length: " + details.length);
         routingTable.addEntry(Map.entry(neighbour, new RoutingEntry(details[0], Integer.parseInt(details[1]), "", 0, Integer.parseInt(details[1]))));
         System.out.println(routingTable.getJSONTable());
         while (true) {

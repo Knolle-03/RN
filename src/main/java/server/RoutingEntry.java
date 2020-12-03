@@ -1,6 +1,7 @@
 package server;
 
 
+import com.google.gson.Gson;
 import lombok.Data;
 
 import java.util.Objects;
@@ -21,6 +22,18 @@ public class RoutingEntry {
         this.hopCount = hopCount + 1;
         this.outPort = outPort;
     }
+
+
+    public static RoutingEntry getRoutingEntryFromJSON(String JSON){
+        Gson gson = new Gson();
+        RoutingEntry newEntry = gson.fromJson(JSON, RoutingEntry.class);
+        //this.setHopCount(this.getHopCount() + 1);
+        System.out.println("Object in JSON constructor: " + newEntry);
+
+        return newEntry;
+
+    }
+
 
 
     @Override
