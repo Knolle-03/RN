@@ -15,7 +15,7 @@ public class RoutingTable {
 
     public List<String> getJSONTable() {
         List<String> JSONEntries = new ArrayList<>();
-        for (RoutingEntry entry : table.values()){
+        for (RoutingEntry entry : table.values()) {
             JSONEntries.add(gson.toJson(entry));
         }
 
@@ -26,10 +26,16 @@ public class RoutingTable {
         table.putIfAbsent(entrySet.getKey(), entrySet.getValue());
     }
 
+
+    public RoutingTable(String IP, int port, String userName) {
+        super();
+        this.addEntry(Map.entry((IP + ":" + port), new RoutingEntry(IP, port, userName, -1, -1)));
+    }
+
     public void updateTable(List<RoutingEntry> entries) {
         boolean updated = false;
-        for(RoutingEntry entry : entries) {
-            if (!table.containsValue(entry)){
+        for (RoutingEntry entry : entries) {
+            if (!table.containsValue(entry)) {
                 updated = true;
                 table.put(entry.getName(), entry);
                 continue;
@@ -37,7 +43,7 @@ public class RoutingTable {
             RoutingEntry inTable = table.get(entry.getName());
 
             // change HopCount if lower
-            if (entry.getHopCount() + 1 < inTable.getHopCount()){
+            if (entry.getHopCount() + 1 < inTable.getHopCount()) {
                 inTable.setHopCount(entry.getHopCount() + 1);
                 updated = true;
             }
@@ -54,13 +60,12 @@ public class RoutingTable {
     }
 
     private void propagateTable() {
-        for(RoutingEntry entry : table.values()) {
+        for (RoutingEntry entry : table.values()) {
             if (entry.getHopCount() == 1) {
                 Server.sendTable(entry.getIp(), entry.getPort());
             }
         }
     }
-
 
 
     public Map<String, RoutingEntry> getTable() {
@@ -71,17 +76,11 @@ public class RoutingTable {
         this.table = table;
     }
 
-
-    public static void main(String[] args) {
-        RoutingTable routingTable = new RoutingTable();
-        RoutingEntry entry1 = new RoutingEntry("127.0.0.1", 9990, "testUser1", 1, 9991);
-        RoutingEntry entry2 = new RoutingEntry("127.0.0.1", 9989, "testUser2", 2, 9992);
-
-
-        routingTable.addEntry(Map.entry("testUser2", entry2));
-        routingTable.addEntry(Map.entry("testUser", entry1));
-
-        System.out.println(routingTable.table.size());
-        System.out.println(routingTable.getJSONTable());
+    @Override
+    public String toString() {
+        return "RoutingTable{" +
+                "table=" + table +
+                ", gson=" + gson +
+                '}';
     }
 }
