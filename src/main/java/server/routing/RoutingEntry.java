@@ -1,4 +1,4 @@
-package server;
+package server.routing;
 
 
 import com.google.gson.Gson;

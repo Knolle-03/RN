@@ -1,7 +1,8 @@
-package server;
+package server.routing;
 
 
 import com.google.gson.Gson;
+import server.Server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,18 +46,15 @@ public class RoutingTable {
             // change HopCount if lower
             if (entry.getHopCount() + 1 < inTable.getHopCount()) {
                 inTable.setHopCount(entry.getHopCount() + 1);
+                // change outPort if new
+                if (entry.getOutPort() != inTable.getOutPort()) inTable.setOutPort(entry.getOutPort());
                 updated = true;
             }
-            // change outPort if new
-            if (entry.getOutPort() != inTable.getOutPort()) {
-                inTable.setOutPort(entry.getOutPort());
-                updated = true;
-            }
+
+
 
         }
-
         if (updated) propagateTable();
-
     }
 
     private void propagateTable() {
