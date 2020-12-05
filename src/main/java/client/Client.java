@@ -56,17 +56,17 @@ public class Client {
         }
         getMyInfo();
         sendInitialRoutingInfo();
-        System.out.println("ready for new Messages.");
+        System.out.println(ANSI_CYAN + "ready for new Messages." + ANSI_RESET);
         getReceiverInfo();
     }
 
     private void messaging() {
-        System.out.println("What message do your want to send to: " + receiverName + "(" + receiverIP  + ":" + receiverPort + ") ?" );
+        System.out.println(ANSI_CYAN + "What message do your want to send to: " + receiverName + "(" + receiverIP  + ":" + receiverPort + ") ?" + ANSI_RESET);
         System.out.print("> ");
         try {
             message = keyboard.readLine();
         } catch (IOException e) {
-            System.out.println("keyboard.readline(); failed.");
+            System.out.println(ANSI_CYAN + "keyboard.readline(); failed." + ANSI_RESET);
             e.printStackTrace();
         }
         if (message.equals("quit")) {
@@ -89,7 +89,7 @@ public class Client {
         try {
             socket.close();
         } catch (IOException e) {
-            System.out.println(ANSI_BLACK + "Failed closing connection to server.");
+            System.out.println(ANSI_BLACK + "Failed closing connection to server." + ANSI_RESET);
             e.printStackTrace();
             System.exit(1);
         }
@@ -109,7 +109,7 @@ public class Client {
             myPort = socket.getLocalPort();
             System.out.print("Enter your username: ");
             myUsername = keyboard.readLine();
-            System.out.println("Own IP: " + myIP + "\nOwn socket port: " + myPort);
+            System.out.println(ANSI_CYAN + "Own IP: " + myIP + "\nOwn socket port: " + myPort + ANSI_RESET);
             RoutingEntry entry = new RoutingEntry(myIP, myPort, myUsername, -1, -1);
             HashMap<String, RoutingEntry> table = new HashMap<>();
             table.put(myIP + ":" + myPort, entry);
@@ -121,15 +121,15 @@ public class Client {
 
     public void sendInitialRoutingInfo() {
         String routingInfo = myRoutingTable.getJSONTable();
-        System.out.println(ANSI_CYAN + "initial routing info from client: " + routingInfo);
+        System.out.println(ANSI_CYAN + "initial routing info from client: " + routingInfo + ANSI_RESET);
         out.println(routingInfo);
     }
 
     public void getReceiverInfo()  {
         try {
-            System.out.println("What is the receiver's username?");
+            System.out.println(ANSI_CYAN + "What is the receiver's username?" + ANSI_RESET);
             receiverName = keyboard.readLine();
-            System.out.println("What is the receiver's IP and Port? Format: <IP>:<PORT>");
+            System.out.println(ANSI_CYAN + "What is the receiver's IP and Port? Format: <IP>:<PORT>" + ANSI_RESET);
             String receiverDetails = keyboard.readLine();
             String[] split = receiverDetails.split(":");
             receiverIP = split[0];

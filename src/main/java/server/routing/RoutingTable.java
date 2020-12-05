@@ -8,6 +8,9 @@ import java.net.Socket;
 import java.sql.SQLOutput;
 import java.util.*;
 
+import static server.utils.ThreadColors.ANSI_CYAN;
+import static server.utils.ThreadColors.ANSI_RESET;
+
 
 public class RoutingTable {
 
@@ -87,11 +90,11 @@ public class RoutingTable {
         }
 
         if (updated) {
-            System.out.println("Server's routing table was updated " + counter + " time(s).");
-            System.out.println("Propagating new routing table to neighbours.");
+            System.out.println(ANSI_CYAN + "Server's routing table was updated " + counter + " time(s)." + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "Propagating new routing table to neighbours." + ANSI_RESET);
             propagateTable(neighbours);
         } else {
-            System.out.println("No routes could be improved with the given table.\nNot propagating own table to neighbours.");
+            System.out.println(ANSI_CYAN + "No routes could be improved with the given table.\nNot propagating own table to neighbours." + ANSI_RESET);
         }
     }
 
@@ -102,7 +105,7 @@ public class RoutingTable {
                 printWriter = new PrintWriter(socket.getOutputStream(), true);
                 printWriter.println(this.getJSONTable());
             } catch (IOException e) {
-                System.out.println("Could not send new table to: " + socket.getInetAddress() + ":" + socket.getPort());
+                System.out.println(ANSI_CYAN + "Could not send new table to: " + socket.getInetAddress() + ":" + socket.getPort() + ANSI_RESET);
             }
         }
     }

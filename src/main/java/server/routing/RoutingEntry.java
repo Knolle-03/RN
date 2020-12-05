@@ -6,6 +6,9 @@ import lombok.Data;
 
 import java.util.Objects;
 
+import static server.utils.ThreadColors.ANSI_CYAN;
+import static server.utils.ThreadColors.ANSI_RESET;
+
 @Data
 public class RoutingEntry {
 
@@ -28,7 +31,7 @@ public class RoutingEntry {
         Gson gson = new Gson();
         RoutingEntry newEntry = gson.fromJson(JSON, RoutingEntry.class);
         //this.setHopCount(this.getHopCount() + 1);
-        System.out.println("Object in JSON constructor: " + newEntry);
+        System.out.println(ANSI_CYAN + "Object in JSON constructor: " + newEntry + ANSI_RESET);
 
         return newEntry;
 

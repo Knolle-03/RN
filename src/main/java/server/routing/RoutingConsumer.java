@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.SocketHandler;
 
+import static server.utils.ThreadColors.ANSI_CYAN;
+import static server.utils.ThreadColors.ANSI_RESET;
+
 public class RoutingConsumer extends Thread{
 
     private RoutingTable ownRoutingTable;
@@ -24,7 +27,7 @@ public class RoutingConsumer extends Thread{
         while (true) {
             try {
                 newRoutingInfo = routingTables.take();
-                System.out.println("Took routing table from queue. routingTablesQueue size: " + routingTables.size());
+                System.out.println(ANSI_CYAN + "Took routing table from queue. routingTablesQueue size: " + routingTables.size() + ANSI_RESET);
             } catch (InterruptedException e) {
                 try {
                     this.wait();

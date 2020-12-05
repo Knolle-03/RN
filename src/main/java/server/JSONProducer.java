@@ -32,12 +32,12 @@ public class JSONProducer extends Thread {
                     System.out.println();
                     try {
                         String incomingMessage = input.readLine();
-                        System.out.println(ANSI_GREEN + "Received client string: " + incomingMessage);
+                        System.out.println(ANSI_GREEN + "Received client string: " + incomingMessage + ANSI_RESET);
                         unformattedJSON.put(incomingMessage);
-                        System.out.println(ANSI_GREEN + "Added new JSON string to the queue. Current size: " + unformattedJSON.size());
+                        System.out.println(ANSI_GREEN + "Added new JSON string to the queue. Current size: " + unformattedJSON.size() + ANSI_RESET);
                     } catch (SocketException e) {
                         // TODO add socket handling
-                        System.out.println(ANSI_GREEN + "Lost connection to client.");
+                        System.out.println(ANSI_GREEN + "Lost connection to client." + ANSI_RESET);
                         return;
                     }
                 }

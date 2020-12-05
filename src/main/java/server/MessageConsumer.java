@@ -10,6 +10,9 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static server.utils.ThreadColors.ANSI_CYAN;
+import static server.utils.ThreadColors.ANSI_RESET;
+
 public class MessageConsumer extends Thread {
 
     LinkedBlockingQueue<MessageWrapper> messageWrappers;
@@ -30,7 +33,7 @@ public class MessageConsumer extends Thread {
         while (true) {
             try {
                 messageWrapper = messageWrappers.take();
-                System.out.println("Took message from messageWrapper queue. messageWrapperQueue size: " + messageWrappers.size());
+                System.out.println(ANSI_CYAN + "Took message from messageWrapper queue. messageWrapperQueue size: " + messageWrappers.size()+ ANSI_RESET);
             } catch (InterruptedException e) {
                 try {
                     this.wait();
@@ -40,18 +43,18 @@ public class MessageConsumer extends Thread {
             int receiverPort = messageWrapper.getToPort();
             int outPort = -42;
 
-            System.out.println("Want to send msg to: " + receiverIP + ":" + receiverPort);
+            System.out.println(ANSI_CYAN + "Want to send msg to: " + receiverIP + ":" + receiverPort + ANSI_RESET);
 
             for (RoutingEntry entry : routingTable.getEntrySet()) {
                 if (receiverIP.equals(entry.getIp()) && receiverPort == entry.getPort()){
                     outPort = entry.getPort();
-                    System.out.println("Found corresponding outPort: " + outPort);
+                    System.out.println(ANSI_CYAN + "Found corresponding outPort: " + outPort + ANSI_RESET);
                 }
             }
 
             for (Socket socket : directNeighbours) {
                 if (socket.getPort() == outPort) {
-                    System.out.println("Found socket of outPort.");
+                    System.out.println(ANSI_CYAN + "Found socket of outPort." + ANSI_RESET);
                     try {
                         printWriter = new PrintWriter(socket.getOutputStream(), true);
                         printWriter.println(new Gson().toJson(messageWrapper));

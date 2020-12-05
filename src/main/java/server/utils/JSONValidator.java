@@ -39,14 +39,14 @@ public class JSONValidator extends Thread{
             if (currentMsg.contains("answerFlag")) {
                 MessageWrapper messageWrapper = gson.fromJson(currentMsg, MessageWrapper.class);
                 messageWrappers.add(messageWrapper);
-                System.out.println(ANSI_RED + "Added new message. messageWrapperQueue size: " + messageWrappers.size());
+                System.out.println(ANSI_RED + "Added new message. messageWrapperQueue size: " + messageWrappers.size() + ANSI_RESET);
             }else if (currentMsg.contains("hopCount")) {
                 RoutingTable table = gson.fromJson(currentMsg, RoutingTable.class);
 
                 routingTables.add(table);
-                System.out.println(ANSI_RED + "Added new routing table. RoutingTableQueue size: " + routingTables.size());
+                System.out.println(ANSI_RED + "Added new routing table. RoutingTableQueue size: " + routingTables.size() + ANSI_RESET);
             } else {
-                System.out.println(ANSI_RED + "discarded ill-formatted JSON: '" + currentMsg + "' | unformattedMessages size: " + unformattedMessages.size());
+                System.out.println(ANSI_RED + "discarded ill-formatted JSON: '" + currentMsg + "' | unformattedMessages size: " + unformattedMessages.size() + ANSI_RESET);
             }
         }
 

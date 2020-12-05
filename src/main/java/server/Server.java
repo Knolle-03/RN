@@ -57,7 +57,7 @@ public class Server {
         userName = "Server_1";//sc.nextLine();
 //        System.out.println(ANSI_BLUE + "What is your neighbour's IP and Port? Format: <IP>:<PORT>");
 //        initialNeighbour ="10.8.0.2:5000";// sc.nextLine();
-        System.out.println(ANSI_BLUE + "Name: " + userName);
+        System.out.println(ANSI_BLUE + "Name: " + userName + ANSI_RESET);
 
     }
 
@@ -82,7 +82,7 @@ public class Server {
                 }
             }
             port = newConnectionListener.getLocalPort();
-            System.out.println(ANSI_BLUE + "Server init successful. Connection: " + ip + ":" + port);
+            System.out.println(ANSI_BLUE + "Server init successful. Connection: " + ip + ":" + port + ANSI_RESET);
 
         } catch (IOException e){
             e.printStackTrace();
@@ -97,16 +97,16 @@ public class Server {
     public void run() {
         try {
             while (true) {
-                System.out.println(ANSI_BLUE + "Listening for new Clients.");
+                System.out.println(ANSI_BLUE + "Listening for new Clients." + ANSI_RESET);
                 Socket neighbour = newConnectionListener.accept();
                 directNeighbours.add(neighbour);
                 JSONProducer msgPrd = new JSONProducer(neighbour, unformattedJSON);
                 msgPrd.setName("Message Producer for : " + neighbour.getInetAddress() + ":" + neighbour.getPort());
                 JSONProducerPool.execute(msgPrd);
-                System.out.println(ANSI_BLUE + "Created new MessageProducer " + msgPrd.getName());
+                System.out.println(ANSI_BLUE + "Created new MessageProducer " + msgPrd.getName() + ANSI_RESET);
             }
         } catch (IOException e) {
-            System.out.println("Server exception: "  + e.getMessage());
+            System.out.println(ANSI_CYAN + "Server exception: "  + e.getMessage() + ANSI_RESET);
         }
     }
 
