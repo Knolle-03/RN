@@ -9,7 +9,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static server.utils.ThreadColors.*;
 
 
-public class JSONValidator extends Thread{
+public class JSONConsumer extends Thread{
 
     private LinkedBlockingQueue<String> unformattedMessages;
     private String currentMsg;
@@ -17,7 +17,7 @@ public class JSONValidator extends Thread{
     private final LinkedBlockingQueue<RoutingTable> routingTables;
     private final Gson gson = new Gson();
 
-    public JSONValidator(LinkedBlockingQueue<String> unformattedMessages, LinkedBlockingQueue<MessageWrapper> messageWrappers, LinkedBlockingQueue<RoutingTable> routingTables) {
+    public JSONConsumer(LinkedBlockingQueue<String> unformattedMessages, LinkedBlockingQueue<MessageWrapper> messageWrappers, LinkedBlockingQueue<RoutingTable> routingTables) {
         this.unformattedMessages = unformattedMessages;
         this.messageWrappers = messageWrappers;
         this.routingTables = routingTables;

@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.sql.SQLOutput;
 import java.util.*;
 
 import static server.utils.ThreadColors.ANSI_CYAN;
@@ -16,12 +15,12 @@ public class RoutingTable {
 
     private Map<String, RoutingEntry> table = new HashMap<>();
 
-    public RoutingTable(String IP, int port, String userName) {
-        this.addEntry(Map.entry((IP + ":" + port), new RoutingEntry(IP, port, userName, -1, -1)));
+    public RoutingTable(String IP, int port, String userName, List<Socket> neighbours) {
+        this.addEntry(new RoutingEntry(IP, port, userName, -1, -1), neighbours);
     }
 
-    public RoutingTable(String IP, int port, String userName, int outPort) {
-        this.addEntry(Map.entry((IP + ":" + port), new RoutingEntry(IP, port, userName, -1, outPort)));
+    public RoutingTable(String IP, int port, String userName, int outPort, List<Socket> neighbours) {
+        this.addEntry(new RoutingEntry(IP, port, userName, 0, outPort), neighbours);
     }
 
     public RoutingTable(Map<String, RoutingEntry> table) {
@@ -34,9 +33,19 @@ public class RoutingTable {
         return json;
     }
 
+
     // sync in case two or more routingWorkerThreads want to add the same entry simultaneously.
-    public synchronized void addEntry(Map.Entry<String, RoutingEntry> entrySet) {
-        table.putIfAbsent(entrySet.getKey(), entrySet.getValue());
+    public synchronized void addEntry(RoutingEntry entry, List<Socket> neighbours) {
+        if (!table.containsKey(entry.getIp() + ":" + entry.getPort())) {
+            table.putIfAbsent(entry.getIp() + ":" + entry.getPort(), entry);
+            System.out.println("added new Entry: " + entry.toString());
+            System.out.println("New Table: " + this);
+            propagateTable(neighbours);
+            return;
+        }
+
+        System.out.println("Entry is already known: " + entry.toString());
+
     }
 
 
@@ -59,7 +68,7 @@ public class RoutingTable {
 
 
         }
-        if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself.");
+        if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself. " + neighbourIP + ":" + neighbourPort);
         for (Socket socket : neighbours) {
             if (socket.getInetAddress().getHostAddress().equals(neighbourIP) && socket.getPort() == neighbourPort) {
                 neighbourSocket = socket;
@@ -106,6 +115,7 @@ public class RoutingTable {
         PrintWriter printWriter;
         for (Socket socket : neighbours) {
             try {
+                System.out.println("Propagating table: " + this + "\nTo: " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
                 printWriter = new PrintWriter(socket.getOutputStream(), true);
                 printWriter.println(this.getJSONTable());
             } catch (IOException e) {

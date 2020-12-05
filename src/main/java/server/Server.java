@@ -4,7 +4,8 @@ import client.Client;
 import server.routing.RoutingConsumer;
 import server.routing.RoutingEntry;
 import server.routing.RoutingTable;
-import server.utils.JSONValidator;
+import server.utils.JSONConsumer;
+import server.utils.JSONProducer;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -29,12 +30,13 @@ public class Server {
     private Scanner sc;
     private String initialNeighbourName;
     private String initialNeighbourAddress;
-    private String userName;
+    private String userName = "Server_1";
     ServerSocket newConnectionListener;
     private LinkedBlockingQueue<String> unformattedJSON = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<MessageWrapper> messageWrappers = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<RoutingTable> routingTables = new LinkedBlockingQueue<>();
     private Client client;
+    private int serverSocketPort = 5003;
     // concurrent?
     private List<Socket> directNeighbours = new ArrayList<>(); //Collections.synchronizedList(new ArrayList<>());
 
@@ -45,10 +47,26 @@ public class Server {
         for (int i = 0; i < 10; i++) {
             messageWorkerPool.execute(new MessageConsumer(messageWrappers, routingTable, directNeighbours));
             routingWorkerPool.execute(new RoutingConsumer(routingTable, routingTables, directNeighbours));
-            JSONValidatorPool.execute(new JSONValidator(unformattedJSON, messageWrappers, routingTables));
+            JSONValidatorPool.execute(new JSONConsumer(unformattedJSON, messageWrappers, routingTables));
         }
-        getFirstConnectionInfo();
-        connectToNewServer();
+
+
+        run();
+    }
+
+    public Server(String serverName, String serverIP, int serverPort, int serverSocketPort, String userName) {
+        this.serverSocketPort = serverSocketPort;
+        this.userName = userName;
+        getClientInfo();
+        initServer();
+        initRoutingTable();
+        for (int i = 0; i < 10; i++) {
+            messageWorkerPool.execute(new MessageConsumer(messageWrappers, routingTable, directNeighbours));
+            routingWorkerPool.execute(new RoutingConsumer(routingTable, routingTables, directNeighbours));
+            JSONValidatorPool.execute(new JSONConsumer(unformattedJSON, messageWrappers, routingTables));
+        }
+
+        connectToNewServer(serverName, serverIP, serverPort);
 
         run();
     }
@@ -58,7 +76,7 @@ public class Server {
 
         sc = new Scanner(System.in);
         System.out.println(ANSI_BLUE + "What is your username?");
-        userName = "Server_1";//sc.nextLine();
+        //userName = "Server_1";//sc.nextLine();
 //        System.out.println(ANSI_BLUE + "What is your neighbour's IP and Port? Format: <IP>:<PORT>");
 //        initialNeighbour ="10.8.0.2:5000";// sc.nextLine();
         System.out.println(ANSI_BLUE + "Name: " + userName + ANSI_RESET);
@@ -72,12 +90,12 @@ public class Server {
         initialNeighbourAddress = sc.nextLine();
     }
 
-    public void connectToNewServer()  {
-        String[] split = initialNeighbourAddress.split(":");
-        try (Socket socket = new Socket(split[0], Integer.parseInt(split[1]))){
+    public void connectToNewServer(String serverName, String serverIP, int serverPort)  {
+        try (Socket socket = new Socket(serverIP, serverPort)){
             directNeighbours.add(socket);
-            RoutingTable routingTable = new RoutingTable(split[0], Integer.parseInt(split[1]), initialNeighbourName, socket.getPort());
-            routingTable.update(routingTable, directNeighbours);
+
+            RoutingTable routingTable = new RoutingTable(serverIP, serverPort, serverName, socket.getPort(), directNeighbours);
+            routingTable.addEntry(new RoutingEntry(serverIP, serverPort, serverName, 0, socket.getPort()), directNeighbours);
 
         } catch (IOException e) {
             System.out.println("Connection to server failed.");
@@ -87,24 +105,24 @@ public class Server {
 
     public void initServer() {
         try {
-            newConnectionListener = new ServerSocket(5001);
+            newConnectionListener = new ServerSocket(serverSocketPort);
             //TODO make dynamically
-            /*
+
             InetAddress address = InetAddress.getLocalHost();
             try (final DatagramSocket socket = new DatagramSocket()) {
                 socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
                 //ip = address.getHostAddress();
                 ip = InetAddress.getLocalHost().getHostAddress();
             }
-            */
-            String hName = InetAddress.getLocalHost().getHostName();
-            InetAddress addrs[] = InetAddress.getAllByName(hName);
-            for (int i = 0; i < addrs.length; i++) {
-                if (addrs[i].getHostAddress().contains("10.8.0.")) {
-                    ip = addrs[i].getHostAddress();
-                    break;
-                }
-            }
+
+//            String hName = InetAddress.getLocalHost().getHostName();
+//            InetAddress addrs[] = InetAddress.getAllByName(hName);
+//            for (int i = 0; i < addrs.length; i++) {
+//                if (addrs[i].getHostAddress().contains("10.8.0.")) {
+//                    ip = addrs[i].getHostAddress();
+//                    break;
+//                }
+//            }
             port = newConnectionListener.getLocalPort();
             System.out.println(ANSI_BLUE + "Server init successful. Connection: " + ip + ":" + port + ANSI_RESET);
 
@@ -114,7 +132,7 @@ public class Server {
     }
 
     public void initRoutingTable() {
-        routingTable = new RoutingTable(ip, port, userName);
+        routingTable = new RoutingTable(ip, port, userName, directNeighbours);
         System.out.println(routingTable.getJSONTable());
     }
 
@@ -134,6 +152,11 @@ public class Server {
         }
     }
 
+
+    public static void main(String[] args) {
+        //Server server = new Server();
+        Server server = new Server("Server_1", "10.8.0.4", 5003, 5004, "Server_2");
+    }
 
 
 }
