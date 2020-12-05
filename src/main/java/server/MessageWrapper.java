@@ -1,12 +1,12 @@
 package server;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
 @Data
-@NoArgsConstructor
-public class Message {
+@AllArgsConstructor
+public class MessageWrapper {
     int answerFlag;
     String toIP;
     int toPort;
@@ -17,5 +17,4 @@ public class Message {
     int ttl;
     Timestamp timestamp;
     String message;
-
 }

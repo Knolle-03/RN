@@ -1,16 +1,17 @@
 package server;
 
+import client.Client;
+import server.routing.RoutingConsumer;
 import server.routing.RoutingEntry;
 import server.routing.RoutingTable;
+import server.utils.JSONValidator;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static server.utils.ThreadColors.*;
 
@@ -18,12 +19,20 @@ import static server.utils.ThreadColors.*;
 public class Server {
 
     private RoutingTable routingTable;
-    private ExecutorService workerPool = Executors.newFixedThreadPool(10);
+    private String ip;
+    private int port;
+    private ExecutorService messageWorkerPool = Executors.newFixedThreadPool(10);
+    private ExecutorService routingWorkerPool = Executors.newFixedThreadPool(10);
+    private ExecutorService JSONValidatorPool = Executors.newFixedThreadPool(10);
+    private ExecutorService JSONProducerPool = Executors.newCachedThreadPool();
     private Scanner sc;
     private String initialNeighbour;
     private String userName;
-    private Queue<String> messages = new ArrayBlockingQueue<>(100);
-
+    ServerSocket newConnectionListener;
+    private LinkedBlockingQueue<String> unformattedJSON = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<MessageWrapper> messageWrappers = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<RoutingTable> routingTables = new LinkedBlockingQueue<>();
+    private Client client;
     // concurrent?
     private List<Socket> directNeighbours = new ArrayList<>(); //Collections.synchronizedList(new ArrayList<>());
 
@@ -31,26 +40,35 @@ public class Server {
         getClientInfo();
         initServer();
         initRoutingTable();
+        for (int i = 0; i < 10; i++) {
+            messageWorkerPool.execute(new MessageConsumer(messageWrappers, routingTable, directNeighbours));
+            routingWorkerPool.execute(new RoutingConsumer(routingTable, routingTables, directNeighbours));
+            JSONValidatorPool.execute(new JSONValidator(unformattedJSON, messageWrappers, routingTables));
+        }
+        run();
     }
 
-    public static void sendTable(String ip, int port) {
-
-    }
 
     public void getClientInfo() {
+
         sc = new Scanner(System.in);
-        System.out.println("What is your username?");
-        userName = sc.nextLine();
-        System.out.println("What is your neighbour's IP and Port? Format: <IP>:<PORT>");
-        initialNeighbour = sc.nextLine();
-        System.out.println("Name: " + userName);
+        System.out.println(ANSI_BLUE + "What is your username?");
+        userName = "Server_1";//sc.nextLine();
+//        System.out.println(ANSI_BLUE + "What is your neighbour's IP and Port? Format: <IP>:<PORT>");
+//        initialNeighbour ="10.8.0.2:5000";// sc.nextLine();
+        System.out.println(ANSI_BLUE + "Name: " + userName);
 
     }
 
     public void initServer() {
-        try (ServerSocket newConnectionListener = new ServerSocket(0)){
+        try {
+            newConnectionListener = new ServerSocket(5001);
+            //TODO make dynamically
             InetAddress address = InetAddress.getLocalHost();
-            System.out.println(ANSI_BLUE + "Server init successful. Connection: " + address + ":" + newConnectionListener.getLocalPort());
+            ip = address.getHostAddress();
+            String hostName = address.getHostName();
+            port = newConnectionListener.getLocalPort();
+            System.out.println(ANSI_BLUE + "Server init successful. Connection: " + ip + ":" + port);
 
         } catch (IOException e){
             e.printStackTrace();
@@ -58,20 +76,20 @@ public class Server {
     }
 
     public void initRoutingTable() {
-        String[] details = initialNeighbour.split(":");
-        routingTable.addEntry(Map.entry(initialNeighbour, new RoutingEntry(details[0], Integer.parseInt(details[1]), "", 0, Integer.parseInt(details[1]))));
+        routingTable = new RoutingTable(ip, port, userName);
+        System.out.println(routingTable.getJSONTable());
     }
 
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-
-
+        try {
             while (true) {
-                System.out.println("Listening for new Clients.");
-                Socket neighbour = serverSocket.accept();
+                System.out.println(ANSI_BLUE + "Listening for new Clients.");
+                Socket neighbour = newConnectionListener.accept();
                 directNeighbours.add(neighbour);
-                new MessageProducer(neighbour, messages).start();
-                System.out.println("Created new MessageProducer.");
+                JSONProducer msgPrd = new JSONProducer(neighbour, unformattedJSON);
+                msgPrd.setName("Message Producer for : " + neighbour.getInetAddress() + ":" + neighbour.getPort());
+                JSONProducerPool.execute(msgPrd);
+                System.out.println(ANSI_BLUE + "Created new MessageProducer " + msgPrd.getName());
             }
         } catch (IOException e) {
             System.out.println("Server exception: "  + e.getMessage());

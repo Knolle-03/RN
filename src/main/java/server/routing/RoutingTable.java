@@ -2,67 +2,113 @@ package server.routing;
 
 
 import com.google.gson.Gson;
-import server.Server;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.sql.SQLOutput;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class RoutingTable {
 
     private Map<String, RoutingEntry> table = new HashMap<>();
-    private Gson gson = new Gson();
 
-    public List<String> getJSONTable() {
-        List<String> JSONEntries = new ArrayList<>();
-        for (RoutingEntry entry : table.values()) {
-            JSONEntries.add(gson.toJson(entry));
-        }
-
-        return JSONEntries;
+    public RoutingTable(String IP, int port, String userName) {
+        this.addEntry(Map.entry((IP + ":" + port), new RoutingEntry(IP, port, userName, -1, -1)));
     }
 
-    public void addEntry(Map.Entry<String, RoutingEntry> entrySet) {
+    public RoutingTable(Map<String, RoutingEntry> table) {
+        this.table = table;
+    }
+
+    public String getJSONTable() {
+        String json = new Gson().toJson(this);
+        System.out.println(json);
+        return json;
+    }
+
+    // sync in case two or more routingWorkerThreads want to add the same entry simultaneously.
+    public synchronized void addEntry(Map.Entry<String, RoutingEntry> entrySet) {
         table.putIfAbsent(entrySet.getKey(), entrySet.getValue());
     }
 
 
-    public RoutingTable(String IP, int port, String userName) {
-        super();
-        this.addEntry(Map.entry((IP + ":" + port), new RoutingEntry(IP, port, userName, -1, -1)));
-    }
 
-    public void updateTable(List<RoutingEntry> entries) {
+
+    // sync in case two or more routingWorkerThreads want to update simultaneously.
+    public synchronized void update(RoutingTable table, List<Socket> neighbours) {
         boolean updated = false;
-        for (RoutingEntry entry : entries) {
-            if (!table.containsValue(entry)) {
+        int counter = 0;
+        String neighbourIP = null;
+        int neighbourPort = -42;
+        Socket neighbourSocket = null;
+
+        for (RoutingEntry entry : table.getEntrySet()) {
+            if (entry.getHopCount() == 0) {
+                neighbourIP = entry.getIp();
+                neighbourPort = entry.getPort();
+                break;
+            }
+
+
+        }
+        if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself.");
+        for (Socket socket : neighbours) {
+            if (socket.getInetAddress().getHostAddress().equals(neighbourIP) && socket.getPort() == neighbourPort) {
+                neighbourSocket = socket;
+                break;
+            }
+        }
+
+        if (neighbourSocket == null) throw new RuntimeException("Received table from neighbour that is not connected anymore.");
+
+
+        for (RoutingEntry entry : table.getEntrySet()) {
+
+            // if entry is totally new
+            if (!this.table.containsValue(entry)) {
                 updated = true;
-                table.put(entry.getName(), entry);
+                entry.setHopCount(entry.getHopCount() + 1);
+                entry.setOutPort(neighbourPort);
+                this.table.put(entry.getName(), entry);
+                counter++;
                 continue;
             }
-            RoutingEntry inTable = table.get(entry.getName());
+
+            RoutingEntry ownEntry = this.table.get(entry.getIp() + ":" + entry.getPort());
 
             // change HopCount if lower
-            if (entry.getHopCount() + 1 < inTable.getHopCount()) {
-                inTable.setHopCount(entry.getHopCount() + 1);
-                // change outPort if new
-                if (entry.getOutPort() != inTable.getOutPort()) inTable.setOutPort(entry.getOutPort());
+            if (entry.getHopCount() + 1 < ownEntry.getHopCount()) {
+                ownEntry.setHopCount(entry.getHopCount() + 1);
+                ownEntry.setOutPort(neighbourSocket.getPort());
+                counter++;
                 updated = true;
             }
-
-
-
         }
-        if (updated) propagateTable();
+
+        if (updated) {
+            System.out.println("Server's routing table was updated " + counter + " time(s).");
+            System.out.println("Propagating new routing table to neighbours.");
+            propagateTable(neighbours);
+        } else {
+            System.out.println("No routes could be improved with the given table.\nNot propagating own table to neighbours.");
+        }
     }
 
-    private void propagateTable() {
-        for (RoutingEntry entry : table.values()) {
-            if (entry.getHopCount() == 1) {
-                Server.sendTable(entry.getIp(), entry.getPort());
+    private void propagateTable(List<Socket> neighbours) {
+        PrintWriter printWriter;
+        for (Socket socket : neighbours) {
+            try {
+                printWriter = new PrintWriter(socket.getOutputStream(), true);
+                printWriter.println(this.getJSONTable());
+            } catch (IOException e) {
+                System.out.println("Could not send new table to: " + socket.getInetAddress() + ":" + socket.getPort());
             }
         }
+    }
+
+    public Set<RoutingEntry> getEntrySet() {
+        return new HashSet<>(this.table.values());
     }
 
 
@@ -78,7 +124,6 @@ public class RoutingTable {
     public String toString() {
         return "RoutingTable{" +
                 "table=" + table +
-                ", gson=" + gson +
                 '}';
     }
 }
