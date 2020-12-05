@@ -27,7 +27,8 @@ public class Server {
     private ExecutorService JSONValidatorPool = Executors.newFixedThreadPool(10);
     private ExecutorService JSONProducerPool = Executors.newCachedThreadPool();
     private Scanner sc;
-    private String initialNeighbour;
+    private String initialNeighbourName;
+    private String initialNeighbourAddress;
     private String userName;
     ServerSocket newConnectionListener;
     private LinkedBlockingQueue<String> unformattedJSON = new LinkedBlockingQueue<>();
@@ -46,6 +47,9 @@ public class Server {
             routingWorkerPool.execute(new RoutingConsumer(routingTable, routingTables, directNeighbours));
             JSONValidatorPool.execute(new JSONValidator(unformattedJSON, messageWrappers, routingTables));
         }
+        getFirstConnectionInfo();
+        connectToNewServer();
+
         run();
     }
 
@@ -59,6 +63,26 @@ public class Server {
 //        initialNeighbour ="10.8.0.2:5000";// sc.nextLine();
         System.out.println(ANSI_BLUE + "Name: " + userName + ANSI_RESET);
 
+    }
+
+    public void getFirstConnectionInfo() {
+        System.out.print("Enter the name of the server you want to connect to: ");
+        initialNeighbourName = sc.nextLine();
+        System.out.println(ANSI_BLUE + "What is the server's IP and Port? Format: <IP>:<PORT>");
+        initialNeighbourAddress = sc.nextLine();
+    }
+
+    public void connectToNewServer()  {
+        String[] split = initialNeighbourAddress.split(":");
+        try (Socket socket = new Socket(split[0], Integer.parseInt(split[1]))){
+            directNeighbours.add(socket);
+            RoutingTable routingTable = new RoutingTable(split[0], Integer.parseInt(split[1]), initialNeighbourName, socket.getPort());
+            routingTable.update(routingTable, directNeighbours);
+
+        } catch (IOException e) {
+            System.out.println("Connection to server failed.");
+            e.printStackTrace();
+        }
     }
 
     public void initServer() {

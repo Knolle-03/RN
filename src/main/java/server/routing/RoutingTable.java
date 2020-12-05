@@ -20,6 +20,10 @@ public class RoutingTable {
         this.addEntry(Map.entry((IP + ":" + port), new RoutingEntry(IP, port, userName, -1, -1)));
     }
 
+    public RoutingTable(String IP, int port, String userName, int outPort) {
+        this.addEntry(Map.entry((IP + ":" + port), new RoutingEntry(IP, port, userName, -1, outPort)));
+    }
+
     public RoutingTable(Map<String, RoutingEntry> table) {
         this.table = table;
     }
