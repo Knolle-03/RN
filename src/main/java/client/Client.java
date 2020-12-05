@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.sql.Timestamp;
@@ -97,7 +98,14 @@ public class Client {
 
     public void getMyInfo() {
         try {
-            myIP = InetAddress.getLocalHost().getHostAddress();
+            String hName = InetAddress.getLocalHost().getHostName();
+            InetAddress addrs[] = InetAddress.getAllByName(hName);
+            for (int i = 0; i < addrs.length; i++) {
+                if (addrs[i].getHostAddress().contains("10.8.0.")) {
+                    myIP = addrs[i].getHostAddress();
+                    break;
+                }
+            }
             myPort = socket.getLocalPort();
             System.out.print("Enter your username: ");
             myUsername = keyboard.readLine();
@@ -135,7 +143,7 @@ public class Client {
 
 
     public static void main(String[] args) {
-        Client client = new Client("10.8.0.2", 5001);
+        Client client = new Client("10.8.0.3", 5001);
     }
 
 

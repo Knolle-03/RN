@@ -7,6 +7,7 @@ import server.routing.RoutingTable;
 import server.utils.JSONValidator;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -64,9 +65,22 @@ public class Server {
         try {
             newConnectionListener = new ServerSocket(5001);
             //TODO make dynamically
+            /*
             InetAddress address = InetAddress.getLocalHost();
-            ip = address.getHostAddress();
-            String hostName = address.getHostName();
+            try (final DatagramSocket socket = new DatagramSocket()) {
+                socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+                //ip = address.getHostAddress();
+                ip = InetAddress.getLocalHost().getHostAddress();
+            }
+            */
+            String hName = InetAddress.getLocalHost().getHostName();
+            InetAddress addrs[] = InetAddress.getAllByName(hName);
+            for (int i = 0; i < addrs.length; i++) {
+                if (addrs[i].getHostAddress().contains("10.8.0.")) {
+                    ip = addrs[i].getHostAddress();
+                    break;
+                }
+            }
             port = newConnectionListener.getLocalPort();
             System.out.println(ANSI_BLUE + "Server init successful. Connection: " + ip + ":" + port);
 

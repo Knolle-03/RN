@@ -27,7 +27,7 @@ public class ClientMessageConsumer extends Thread {
 
                 JSON = input.readLine();
                 // TODO: Rewrite if client is supposed to have it's own up-to-date routing table.
-                if (!JSON.contains("hopCount")) continue;
+                if (JSON.contains("hopCount")) continue;
 
                 messageWrapper = new Gson().fromJson(JSON, MessageWrapper.class);
                 System.out.println("Received new Message from " + messageWrapper.getFromName() + ": " + messageWrapper.getMessage());
