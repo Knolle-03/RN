@@ -37,15 +37,21 @@ public class MessageConsumer extends Thread {
                 } catch (InterruptedException ignored) {}
             }
             String receiverIP = messageWrapper.getToIP();
-            int receiverPort = messageWrapper.toPort;
+            int receiverPort = messageWrapper.getToPort();
             int outPort = -42;
 
+            System.out.println("Want to send msg to: " + receiverIP + ":" + receiverPort);
+
             for (RoutingEntry entry : routingTable.getEntrySet()) {
-                if (receiverIP.equals(entry.getIp()) && receiverPort == entry.getPort()) outPort = entry.getPort();
+                if (receiverIP.equals(entry.getIp()) && receiverPort == entry.getPort()){
+                    outPort = entry.getPort();
+                    System.out.println("Found corresponding outPort: " + outPort);
+                }
             }
 
             for (Socket socket : directNeighbours) {
-                if (socket.getLocalPort() == outPort) {
+                if (socket.getPort() == outPort) {
+                    System.out.println("Found socket of outPort.");
                     try {
                         printWriter = new PrintWriter(socket.getOutputStream(), true);
                         printWriter.println(new Gson().toJson(messageWrapper));
