@@ -116,7 +116,7 @@ public class Server {
             try (final DatagramSocket socket = new DatagramSocket()) {
                 socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
                 //ip = address.getHostAddress();
-                ip = InetAddress.getLocalHost().getHostAddress();
+                ip = address.getHostAddress();
             }
 
 //            String hName = InetAddress.getLocalHost().getHostName();
@@ -137,7 +137,7 @@ public class Server {
 
     public void initRoutingTable() {
         routingTable = new RoutingTable(ip, port, userName, directNeighbours);
-        System.out.println(routingTable.getJSONTable());
+        System.out.println("Initial routing table: " + routingTable.getJSONTable());
         new ServerInfoThread(directNeighbours, routingTable).start();
     }
 

@@ -14,7 +14,8 @@ public class JSONProducer extends Thread {
 
     Socket socket;
     LinkedBlockingQueue<String> unformattedJSON;
-
+    BufferedReader input;
+    String currentMsg;
 
     public JSONProducer(Socket socket, LinkedBlockingQueue<String> unformattedJSON) {
         this.socket = socket;
@@ -24,18 +25,28 @@ public class JSONProducer extends Thread {
 
     @Override
     public void run() {
+        try {
+            input = new BufferedReader( new InputStreamReader(socket.getInputStream()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         while (true) {
             try {
-                BufferedReader input = new BufferedReader( new InputStreamReader(socket.getInputStream()));
-
+                
                 while (true) {
-                    System.out.println();
                     try {
-                        String incomingMessage = input.readLine();
-                        System.out.println(ANSI_GREEN + "Received client string: " + incomingMessage + ANSI_RESET);
 
-                        unformattedJSON.put(incomingMessage);
-                        System.out.println(ANSI_GREEN + "Added new JSON string to the queue. Current size: " + unformattedJSON.size() + ANSI_RESET);
+
+                        currentMsg = input.readLine();
+                        System.out.println(ANSI_GREEN + "Received client string: " + currentMsg + ANSI_RESET);
+
+                        if (currentMsg != null) {
+                            unformattedJSON.put(currentMsg);
+                            System.out.println(ANSI_GREEN + "Added new JSON string to the queue. Current size: " + unformattedJSON.size() + ANSI_RESET);
+                        } else {
+                            break;
+                            //System.out.println("JSON was ill-formed. (JSON: " + currentMsg + ")");
+                        }
                     } catch (SocketException e) {
                         // TODO add socket handling
                         System.out.println(ANSI_GREEN + "Lost connection to client." + ANSI_RESET);

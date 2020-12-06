@@ -87,6 +87,7 @@ public class RoutingTable {
 
             // if entry is totally new
             if (!this.table.containsValue(entry)) {
+                System.out.println("Got new Entry: " + entry);
                 updated = true;
                 entry.setHopCount(entry.getHopCount() + 1);
                 entry.setOutPort(neighbourPort);
@@ -99,6 +100,7 @@ public class RoutingTable {
 
             // change HopCount if lower
             if (entry.getHopCount() + 1 < ownEntry.getHopCount()) {
+                System.out.println("Found shorter Path: " + entry + "\nPrev: " + ownEntry);
                 ownEntry.setHopCount(entry.getHopCount() + 1);
                 ownEntry.setOutPort(neighbourSocket.getPort());
                 counter++;
