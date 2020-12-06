@@ -3,6 +3,7 @@ package server.routing;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import lombok.NoArgsConstructor;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,10 +13,12 @@ import java.util.*;
 import static server.utils.ThreadColors.ANSI_CYAN;
 import static server.utils.ThreadColors.ANSI_RESET;
 
-
+@NoArgsConstructor
 public class RoutingTable {
 
     private Map<String, RoutingEntry> table = new HashMap<>();
+
+
 
     public RoutingTable(String IP, int port, String userName, List<Socket> neighbours) {
         this.addEntry(new RoutingEntry(IP, port, userName, -1, -1), neighbours);
@@ -54,14 +57,21 @@ public class RoutingTable {
 
     // sync in case two or more routingWorkerThreads want to update simultaneously.
     public synchronized void update(RoutingTable table, List<Socket> neighbours) {
+        // keep track if table is updated
         boolean updated = false;
+        // number of updates
         int counter = 0;
+        // IP of the neighbour who sent the routing table
         String neighbourIP = null;
+        // Port of the neighbour who sent the routing table
         int neighbourPort = -42;
+        // Socket of the neighbour who sent the routing table
         Socket neighbourSocket = null;
 
+        // Find neighbour in it's own routing table
         for (RoutingEntry entry : table.getEntrySet()) {
             if (entry.getHopCount() == 0) {
+                // assign IP and port
                 neighbourIP = entry.getIp();
                 neighbourPort = entry.getPort();
                 break;
@@ -70,12 +80,14 @@ public class RoutingTable {
         System.out.println("neighbour: " + neighbourIP + ":" + neighbourPort);
 
 
-
+        // if one or both is not assigned the neighbour is not present in it's own routing table
         if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself. " + neighbourIP + ":" + neighbourPort);
+        System.out.println("Neighbours in update(): " + neighbours);
+        // find sending neighbour's socket
         for (Socket socket : neighbours) {
-            System.out.println("Neighbours in update(): " + socket);
-            if (socket.getInetAddress().getHostAddress().equals(neighbourIP) && socket.getLocalPort() == neighbourPort) {
+            if (socket.getInetAddress().getHostAddress().equals(neighbourIP) && socket.getPort() == neighbourPort) {
                 neighbourSocket = socket;
+
                 break;
             }
         }

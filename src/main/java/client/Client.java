@@ -1,9 +1,11 @@
 package client;
 
 import com.google.gson.Gson;
+import lombok.Data;
 import server.MessageWrapper;
 import server.routing.RoutingEntry;
 import server.routing.RoutingTable;
+import server.utils.RoutingInfoThread;
 
 import static server.utils.ThreadColors.*;
 
@@ -12,7 +14,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.sql.Timestamp;
@@ -20,12 +21,13 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+@Data
 public class Client {
 
     private String myIP;
     private int myPort;
     private String myUsername;
-    private RoutingTable myRoutingTable;
+    private RoutingTable myRoutingTable = new RoutingTable();
     private Socket socket;
     private BufferedReader keyboard;
     private PrintWriter out;
@@ -47,8 +49,9 @@ public class Client {
     private void connect(String SERVER_IP, int port) {
         try {
             socket = new Socket(SERVER_IP, port);
-            service = Executors.newFixedThreadPool(1);
-            service.execute(new ClientMessageConsumer(socket));
+            service = Executors.newFixedThreadPool(2);
+            service.execute(new ClientMessageConsumer(socket, this));
+            service.execute(new ClientRoutingInfoThread(myRoutingTable));
             keyboard = new BufferedReader(new InputStreamReader(System.in));
             out = new PrintWriter(socket.getOutputStream(), true);
         } catch (IOException e) {
@@ -143,7 +146,7 @@ public class Client {
 
 
     public static void main(String[] args) {
-        Client client = new Client("10.8.0.6", 5003);
+        Client client = new Client("10.8.0.4", 5003);
     }
 
 

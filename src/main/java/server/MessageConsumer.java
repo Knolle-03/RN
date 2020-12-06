@@ -65,7 +65,7 @@ public class MessageConsumer extends Thread {
             }
 
 
-
+            System.out.println("Unknown address. Message was discarded.");
 
         }
     }
