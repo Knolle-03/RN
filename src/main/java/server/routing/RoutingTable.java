@@ -74,7 +74,7 @@ public class RoutingTable {
         if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself. " + neighbourIP + ":" + neighbourPort);
         for (Socket socket : neighbours) {
             System.out.println("Neighbours in update(): " + socket);
-            if (socket.getInetAddress().getHostAddress().equals(neighbourIP) && socket.getPort() == neighbourPort) {
+            if (socket.getInetAddress().getHostAddress().equals(neighbourIP) && socket.getLocalPort() == neighbourPort) {
                 neighbourSocket = socket;
                 break;
             }
@@ -119,9 +119,10 @@ public class RoutingTable {
 
     private void propagateTable(List<Socket> neighbours) {
         PrintWriter printWriter;
+        System.out.println("Propagating table: " + this);
         for (Socket socket : neighbours) {
             try {
-                System.out.println("Propagating table: " + this + "\nTo: " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
+                System.out.println("To: "  + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
                 printWriter = new PrintWriter(socket.getOutputStream(), true);
                 printWriter.println(this.getJSONTable());
             } catch (IOException e) {

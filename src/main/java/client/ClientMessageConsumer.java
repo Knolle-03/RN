@@ -37,7 +37,13 @@ public class ClientMessageConsumer extends Thread {
             } catch (IOException e) {
                 try {
                     this.wait();
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+
+                } catch (IllegalMonitorStateException ex) {
+                    e.printStackTrace();
+                    System.out.println("Lost connection to Server. Please reconnect.");
+                    System.exit(1);
+                }
             }
         }
     }
