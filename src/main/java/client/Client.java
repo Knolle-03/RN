@@ -143,7 +143,7 @@ public class Client {
 
 
     public static void main(String[] args) {
-        Client client = new Client("10.8.0.2", 5003);
+        Client client = new Client("10.8.0.6", 5003);
     }
 
 

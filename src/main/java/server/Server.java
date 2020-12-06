@@ -70,7 +70,7 @@ public class Server {
         }
 
         connectToNewServer(serverName, serverIP, serverPort);
-
+        System.out.println("About to exe run();");
         run();
     }
 
@@ -96,9 +96,9 @@ public class Server {
     public void connectToNewServer(String serverName, String serverIP, int serverPort)  {
         try {
             newSocket = new Socket(serverIP, serverPort);
+            printSocketInfo(newSocket);
             directNeighbours.add(newSocket);
 
-            //RoutingTable routingTable = new RoutingTable(serverIP, serverPort, serverName, socket.getPort(), directNeighbours);
             routingTable.addEntry(new RoutingEntry(serverIP, serverPort, serverName, 0, newSocket.getPort()), directNeighbours);
 
         } catch (IOException e) {
@@ -146,6 +146,7 @@ public class Server {
             while (true) {
                 System.out.println(ANSI_BLUE + "Listening for new Clients." + ANSI_RESET);
                 Socket neighbour = newConnectionListener.accept();
+                printSocketInfo(neighbour);
                 directNeighbours.add(neighbour);
                 System.out.println("direct neighbours in run(): " + directNeighbours);
                 JSONProducer msgPrd = new JSONProducer(neighbour, unformattedJSON);
@@ -161,7 +162,16 @@ public class Server {
 
     public static void main(String[] args) {
         //Server server = new Server();
-        Server server = new Server("Server_1", "10.8.0.2", 5003, 5004, "Server_2");
+        Server server = new Server("Server_1", "10.8.0.6", 5003, 5004, "Server_2");
+    }
+
+
+    public void printSocketInfo(Socket socket) {
+        System.out.println("Local socket port: " + socket.getLocalPort());
+        System.out.println("Remote socket port: " + socket.getPort());
+        System.out.println("Local Address: " + socket.getLocalAddress());
+        System.out.println("Local socket address: " + socket.getLocalSocketAddress());
+        System.out.println("InetAddress: " + socket.getInetAddress());
     }
 
 
