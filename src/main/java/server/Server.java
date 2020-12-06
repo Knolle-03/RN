@@ -6,6 +6,7 @@ import server.routing.RoutingEntry;
 import server.routing.RoutingTable;
 import server.utils.JSONConsumer;
 import server.utils.JSONProducer;
+import server.utils.ServerInfoThread;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -36,6 +37,8 @@ public class Server {
     private LinkedBlockingQueue<MessageWrapper> messageWrappers = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<RoutingTable> routingTables = new LinkedBlockingQueue<>();
     private Client client;
+    private Socket newSocket;
+
     private int serverSocketPort = 5003;
     // concurrent?
     private List<Socket> directNeighbours = new ArrayList<>(); //Collections.synchronizedList(new ArrayList<>());
@@ -91,11 +94,12 @@ public class Server {
     }
 
     public void connectToNewServer(String serverName, String serverIP, int serverPort)  {
-        try (Socket socket = new Socket(serverIP, serverPort)){
-            directNeighbours.add(socket);
+        try {
+            newSocket = new Socket(serverIP, serverPort);
+            directNeighbours.add(newSocket);
 
-            RoutingTable routingTable = new RoutingTable(serverIP, serverPort, serverName, socket.getPort(), directNeighbours);
-            routingTable.addEntry(new RoutingEntry(serverIP, serverPort, serverName, 0, socket.getPort()), directNeighbours);
+            //RoutingTable routingTable = new RoutingTable(serverIP, serverPort, serverName, socket.getPort(), directNeighbours);
+            routingTable.addEntry(new RoutingEntry(serverIP, serverPort, serverName, 0, newSocket.getPort()), directNeighbours);
 
         } catch (IOException e) {
             System.out.println("Connection to server failed.");
@@ -134,6 +138,7 @@ public class Server {
     public void initRoutingTable() {
         routingTable = new RoutingTable(ip, port, userName, directNeighbours);
         System.out.println(routingTable.getJSONTable());
+        new ServerInfoThread(directNeighbours, routingTable).start();
     }
 
     public void run() {
@@ -142,6 +147,7 @@ public class Server {
                 System.out.println(ANSI_BLUE + "Listening for new Clients." + ANSI_RESET);
                 Socket neighbour = newConnectionListener.accept();
                 directNeighbours.add(neighbour);
+                System.out.println("direct neighbours in run(): " + directNeighbours);
                 JSONProducer msgPrd = new JSONProducer(neighbour, unformattedJSON);
                 msgPrd.setName("Message Producer for : " + neighbour.getInetAddress() + ":" + neighbour.getPort());
                 JSONProducerPool.execute(msgPrd);
@@ -155,7 +161,7 @@ public class Server {
 
     public static void main(String[] args) {
         //Server server = new Server();
-        Server server = new Server("Server_1", "10.8.0.4", 5003, 5004, "Server_2");
+        Server server = new Server("Server_1", "10.8.0.2", 5003, 5004, "Server_2");
     }
 
 

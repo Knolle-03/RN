@@ -27,12 +27,13 @@ public class RoutingConsumer extends Thread{
         while (true) {
             try {
                 newRoutingInfo = routingTables.take();
-                System.out.println(ANSI_CYAN + "Took routing table from queue. routingTablesQueue size: " + routingTables.size() + ANSI_RESET);
+                System.out.println(ANSI_CYAN + "Took routing table from queue " + newRoutingInfo + ". routingTablesQueue size: " + routingTables.size() + ANSI_RESET);
             } catch (InterruptedException e) {
                 try {
                     this.wait();
                 } catch (InterruptedException ignored) {}
             }
+            System.out.println(ANSI_CYAN + "Updating table with Info: " + newRoutingInfo + "\nCurrent neighbours: " + directNeighbours + ANSI_RESET);
             ownRoutingTable.update(newRoutingInfo, directNeighbours);
         }
     }

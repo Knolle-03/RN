@@ -2,6 +2,8 @@ package server.routing;
 
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -28,16 +30,15 @@ public class RoutingTable {
     }
 
     public String getJSONTable() {
-        String json = new Gson().toJson(this);
-        System.out.println(json);
-        return json;
+        return new Gson().toJson(this);
     }
 
 
     // sync in case two or more routingWorkerThreads want to add the same entry simultaneously.
     public synchronized void addEntry(RoutingEntry entry, List<Socket> neighbours) {
         if (!table.containsKey(entry.getIp() + ":" + entry.getPort())) {
-            table.putIfAbsent(entry.getIp() + ":" + entry.getPort(), entry);
+            System.out.println("Table does not contain this entry: " + entry);
+            table.put(entry.getIp() + ":" + entry.getPort(), entry);
             System.out.println("added new Entry: " + entry.toString());
             System.out.println("New Table: " + this);
             propagateTable(neighbours);
@@ -65,11 +66,14 @@ public class RoutingTable {
                 neighbourPort = entry.getPort();
                 break;
             }
-
-
         }
+        System.out.println("neighbour: " + neighbourIP + ":" + neighbourPort);
+
+
+
         if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself. " + neighbourIP + ":" + neighbourPort);
         for (Socket socket : neighbours) {
+            System.out.println("Neighbours in update(): " + socket);
             if (socket.getInetAddress().getHostAddress().equals(neighbourIP) && socket.getPort() == neighbourPort) {
                 neighbourSocket = socket;
                 break;
@@ -142,5 +146,13 @@ public class RoutingTable {
         return "RoutingTable{" +
                 "table=" + table +
                 '}';
+    }
+
+    public int size() {
+        return table.size();
+    }
+
+    public String prettyRoutingTableJSON () {
+        return new GsonBuilder().setPrettyPrinting().create().toJson(this);
     }
 }

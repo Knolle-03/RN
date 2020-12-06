@@ -99,10 +99,10 @@ public class Client {
     public void getMyInfo() {
         try {
             String hName = InetAddress.getLocalHost().getHostName();
-            InetAddress addrs[] = InetAddress.getAllByName(hName);
-            for (int i = 0; i < addrs.length; i++) {
-                if (addrs[i].getHostAddress().contains("10.8.0.")) {
-                    myIP = addrs[i].getHostAddress();
+            InetAddress[] addrs = InetAddress.getAllByName(hName);
+            for (InetAddress addr : addrs) {
+                if (addr.getHostAddress().contains("10.8.0.")) {
+                    myIP = addr.getHostAddress();
                     break;
                 }
             }
@@ -143,7 +143,7 @@ public class Client {
 
 
     public static void main(String[] args) {
-        Client client = new Client("10.8.0.2", 5001);
+        Client client = new Client("10.8.0.2", 5003);
     }
 
 
