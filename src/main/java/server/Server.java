@@ -6,7 +6,7 @@ import server.routing.RoutingEntry;
 import server.routing.RoutingTable;
 import server.utils.JSONConsumer;
 import server.utils.JSONProducer;
-import server.utils.ServerInfoThread;
+import server.utils.RoutingInfoThread;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -21,7 +21,7 @@ import static server.utils.ThreadColors.*;
 
 public class Server {
 
-    private RoutingTable routingTable;
+    private RoutingTable routingTable = new RoutingTable();
     private String ip;
     private int port;
     private ExecutorService messageWorkerPool = Executors.newFixedThreadPool(10);
@@ -116,7 +116,7 @@ public class Server {
             try (final DatagramSocket socket = new DatagramSocket()) {
                 socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
                 //ip = address.getHostAddress();
-                ip = address.getHostAddress();
+                ip = InetAddress.getLocalHost().getHostAddress();
             }
 
 //            String hName = InetAddress.getLocalHost().getHostName();
@@ -137,8 +137,8 @@ public class Server {
 
     public void initRoutingTable() {
         routingTable = new RoutingTable(ip, port, userName, directNeighbours);
-        System.out.println("Initial routing table: " + routingTable.getJSONTable());
-        new ServerInfoThread(directNeighbours, routingTable).start();
+        System.out.println(routingTable.getJSONTable());
+        new RoutingInfoThread(directNeighbours, routingTable).start();
     }
 
     public void run() {
@@ -162,7 +162,7 @@ public class Server {
 
     public static void main(String[] args) {
         //Server server = new Server();
-        Server server = new Server("Server_1", "10.8.0.6", 5003, 5004, "Server_2");
+        Server server = new Server("Server_1", "10.8.0.4", 5003, 5004, "Server_2");
     }
 
 

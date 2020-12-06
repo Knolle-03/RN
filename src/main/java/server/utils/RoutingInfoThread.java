@@ -6,12 +6,12 @@ import server.routing.RoutingTable;
 import java.net.Socket;
 import java.util.List;
 
-public class ServerInfoThread extends Thread {
+public class RoutingInfoThread extends Thread {
 
     private List<Socket> neighbours;
     private RoutingTable routingTable;
 
-    public ServerInfoThread(List<Socket> neighbours, RoutingTable routingTable) {
+    public RoutingInfoThread(List<Socket> neighbours, RoutingTable routingTable) {
         this.neighbours = neighbours;
         this.routingTable = routingTable;
     }
