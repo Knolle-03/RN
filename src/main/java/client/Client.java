@@ -51,7 +51,7 @@ public class Client {
             socket = new Socket(SERVER_IP, port);
             service = Executors.newFixedThreadPool(2);
             service.execute(new ClientMessageConsumer(socket, this));
-            service.execute(new ClientRoutingInfoThread(myRoutingTable));
+            //service.execute(new ClientRoutingInfoThread(myRoutingTable));
             keyboard = new BufferedReader(new InputStreamReader(System.in));
             out = new PrintWriter(socket.getOutputStream(), true);
         } catch (IOException e) {
@@ -113,7 +113,7 @@ public class Client {
             System.out.print("Enter your username: ");
             myUsername = keyboard.readLine();
             System.out.println(ANSI_CYAN + "Own IP: " + myIP + "\nOwn socket port: " + myPort + ANSI_RESET);
-            RoutingEntry entry = new RoutingEntry(myIP, myPort, myUsername, -1, -1);
+            RoutingEntry entry = new RoutingEntry(myIP, myPort, myUsername, -1, null);
             HashMap<String, RoutingEntry> table = new HashMap<>();
             table.put(myIP + ":" + myPort, entry);
             myRoutingTable = new RoutingTable(table);
@@ -146,7 +146,7 @@ public class Client {
 
 
     public static void main(String[] args) {
-        Client client = new Client("10.8.0.4", 5003);
+        Client client = new Client("10.8.0.3", 5003);
     }
 
 

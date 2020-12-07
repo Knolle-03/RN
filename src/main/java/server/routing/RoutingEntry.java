@@ -4,6 +4,7 @@ package server.routing;
 import com.google.gson.Gson;
 import lombok.Data;
 
+import java.net.Socket;
 import java.util.Objects;
 
 import static server.utils.ThreadColors.ANSI_CYAN;
@@ -16,16 +17,15 @@ public class RoutingEntry {
     private int port;
     private String name;
     private int hopCount;
-    private int outPort;
+    private transient Socket socket;
 
-    public RoutingEntry(String ip, int port, String name, int hopCount, int outPort) {
+    public RoutingEntry(String ip, int port, String name, int hopCount, Socket socket) {
         this.ip = ip;
         this.port = port;
         this.name = name;
-        this.hopCount = hopCount + 1;
-        this.outPort = outPort;
+        this.hopCount = hopCount;
+        this.socket = socket;
     }
-
 
     public static RoutingEntry getRoutingEntryFromJSON(String JSON){
         Gson gson = new Gson();

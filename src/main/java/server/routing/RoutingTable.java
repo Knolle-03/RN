@@ -21,11 +21,11 @@ public class RoutingTable {
 
 
     public RoutingTable(String IP, int port, String userName, List<Socket> neighbours) {
-        this.addEntry(new RoutingEntry(IP, port, userName, -1, -1), neighbours);
+        this.addEntry(new RoutingEntry(IP, port, userName, -1, null), neighbours);
     }
 
-    public RoutingTable(String IP, int port, String userName, int outPort, List<Socket> neighbours) {
-        this.addEntry(new RoutingEntry(IP, port, userName, 0, outPort), neighbours);
+    public RoutingTable(String IP, int port, String userName, Socket socket, List<Socket> neighbours) {
+        this.addEntry(new RoutingEntry(IP, port, userName, 0, socket), neighbours);
     }
 
     public RoutingTable(Map<String, RoutingEntry> table) {
@@ -70,7 +70,8 @@ public class RoutingTable {
 
         // Find neighbour in it's own routing table
         for (RoutingEntry entry : table.getEntrySet()) {
-            if (entry.getHopCount() == 0) {
+            System.out.println("Entry in loop:" + entry);
+            if (entry.getHopCount() <= 1) {
                 // assign IP and port
                 neighbourIP = entry.getIp();
                 neighbourPort = entry.getPort();
@@ -81,7 +82,7 @@ public class RoutingTable {
 
 
         // if one or both is not assigned the neighbour is not present in it's own routing table
-        if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself. " + neighbourIP + ":" + neighbourPort);
+        //if (neighbourIP == null || neighbourPort == -42) throw new RuntimeException("Count not find neighbour who sent the table in the table itself. " + neighbourIP + ":" + neighbourPort);
         System.out.println("Neighbours in update(): " + neighbours);
         // find sending neighbour's socket
         for (Socket socket : neighbours) {
@@ -92,7 +93,7 @@ public class RoutingTable {
             }
         }
 
-        if (neighbourSocket == null) throw new RuntimeException("Received table from neighbour that is not connected anymore.");
+        //if (neighbourSocket == null) throw new RuntimeException("Received table from neighbour that is not connected anymore.");
 
 
         for (RoutingEntry entry : table.getEntrySet()) {
@@ -101,8 +102,8 @@ public class RoutingTable {
             if (!this.table.containsValue(entry)) {
                 updated = true;
                 entry.setHopCount(entry.getHopCount() + 1);
-                entry.setOutPort(neighbourPort);
-                this.table.put(entry.getName(), entry);
+                entry.setSocket(neighbourSocket);
+                this.table.put(entry.getIp() + ":" + entry.getPort(), entry);
                 counter++;
                 continue;
             }
@@ -112,10 +113,12 @@ public class RoutingTable {
             // change HopCount if lower
             if (entry.getHopCount() + 1 < ownEntry.getHopCount()) {
                 ownEntry.setHopCount(entry.getHopCount() + 1);
-                ownEntry.setOutPort(neighbourSocket.getPort());
+                ownEntry.setSocket(neighbourSocket);
                 counter++;
                 updated = true;
             }
+
+            if (ownEntry.getName().equals("")) ownEntry.setName(entry.getName());
         }
 
         if (updated) {
@@ -127,7 +130,7 @@ public class RoutingTable {
         }
     }
 
-    private void propagateTable(List<Socket> neighbours) {
+    public void propagateTable(List<Socket> neighbours) {
         PrintWriter printWriter;
         System.out.println("Propagating table: " + this);
         for (Socket socket : neighbours) {
@@ -167,5 +170,11 @@ public class RoutingTable {
 
     public String prettyRoutingTableJSON () {
         return new GsonBuilder().setPrettyPrinting().create().toJson(this);
+    }
+
+    public void remove(Socket socket) {
+        for (RoutingEntry entry : this.getEntrySet()) {
+            if (entry.getSocket() == socket) table.remove(entry.getIp() + ":" + entry.getPort());
+        }
     }
 }

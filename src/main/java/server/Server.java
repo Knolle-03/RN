@@ -1,6 +1,7 @@
 package server;
 
 import client.Client;
+import lombok.Data;
 import server.routing.RoutingConsumer;
 import server.routing.RoutingEntry;
 import server.routing.RoutingTable;
@@ -18,7 +19,7 @@ import java.util.concurrent.*;
 
 import static server.utils.ThreadColors.*;
 
-
+@Data
 public class Server {
 
     private RoutingTable routingTable = new RoutingTable();
@@ -27,7 +28,7 @@ public class Server {
     private ExecutorService messageWorkerPool = Executors.newFixedThreadPool(10);
     private ExecutorService routingWorkerPool = Executors.newFixedThreadPool(10);
     private ExecutorService JSONValidatorPool = Executors.newFixedThreadPool(10);
-    private ExecutorService JSONProducerPool = Executors.newCachedThreadPool();
+    private ExecutorService JSONProducerPool = Executors.newFixedThreadPool(10);
     private Scanner sc;
     private String initialNeighbourName;
     private String initialNeighbourAddress;
@@ -47,11 +48,7 @@ public class Server {
         getClientInfo();
         initServer();
         initRoutingTable();
-        for (int i = 0; i < 10; i++) {
-            messageWorkerPool.execute(new MessageConsumer(messageWrappers, routingTable, directNeighbours));
-            routingWorkerPool.execute(new RoutingConsumer(routingTable, routingTables, directNeighbours));
-            JSONValidatorPool.execute(new JSONConsumer(unformattedJSON, messageWrappers, routingTables));
-        }
+        startWorkerPools();
 
 
         run();
@@ -63,15 +60,22 @@ public class Server {
         getClientInfo();
         initServer();
         initRoutingTable();
-        for (int i = 0; i < 10; i++) {
-            messageWorkerPool.execute(new MessageConsumer(messageWrappers, routingTable, directNeighbours));
-            routingWorkerPool.execute(new RoutingConsumer(routingTable, routingTables, directNeighbours));
-            JSONValidatorPool.execute(new JSONConsumer(unformattedJSON, messageWrappers, routingTables));
-        }
+        startWorkerPools();
 
         connectToNewServer(serverName, serverIP, serverPort);
         System.out.println("About to exe run();");
         run();
+    }
+
+
+    public void startWorkerPools() {
+        for (int i = 0; i < 10; i++) {
+            messageWorkerPool.execute(new MessageConsumer(messageWrappers, routingTable, directNeighbours));
+            routingWorkerPool.execute(new RoutingConsumer(routingTable, routingTables, directNeighbours));
+            JSONValidatorPool.execute(new JSONConsumer(unformattedJSON, messageWrappers, routingTables));
+            JSONProducerPool.execute(new JSONProducer(directNeighbours, unformattedJSON, this));
+
+        }
     }
 
 
@@ -98,8 +102,12 @@ public class Server {
             newSocket = new Socket(serverIP, serverPort);
             printSocketInfo(newSocket);
             directNeighbours.add(newSocket);
+            newSocket.setSoTimeout(1);
 
-            routingTable.addEntry(new RoutingEntry(serverIP, serverPort, serverName, 0, newSocket.getPort()), directNeighbours);
+            routingTable.addEntry(new RoutingEntry(serverIP, serverPort, serverName, 1, newSocket), directNeighbours);
+            new RoutingInfoThread(directNeighbours, routingTable).start();
+
+
 
         } catch (IOException e) {
             System.out.println("Connection to server failed.");
@@ -148,11 +156,15 @@ public class Server {
                 Socket neighbour = newConnectionListener.accept();
                 printSocketInfo(neighbour);
                 directNeighbours.add(neighbour);
+                neighbour.setSoTimeout(1);
+                routingTable.addEntry(new RoutingEntry(neighbour.getInetAddress().getHostAddress(), neighbour.getPort(), "", 1, neighbour), directNeighbours);
+
+
                 System.out.println("direct neighbours in run(): " + directNeighbours);
-                JSONProducer msgPrd = new JSONProducer(neighbour, unformattedJSON);
-                msgPrd.setName("Message Producer for : " + neighbour.getInetAddress() + ":" + neighbour.getPort());
-                JSONProducerPool.execute(msgPrd);
-                System.out.println(ANSI_BLUE + "Created new MessageProducer " + msgPrd.getName() + ANSI_RESET);
+                //JSONProducer msgPrd = new JSONProducer(neighbour, unformattedJSON, this);
+                //msgPrd.setName("Message Producer for : " + neighbour.getInetAddress() + ":" + neighbour.getPort());
+                //JSONProducerPool.execute(msgPrd);
+                //System.out.println(ANSI_BLUE + "Created new MessageProducer " + msgPrd.getName() + ANSI_RESET);
             }
         } catch (IOException e) {
             System.out.println(ANSI_CYAN + "Server exception: "  + e.getMessage() + ANSI_RESET);
@@ -162,7 +174,7 @@ public class Server {
 
     public static void main(String[] args) {
         //Server server = new Server();
-        Server server = new Server("Server_1", "10.8.0.4", 5003, 5004, "Server_2");
+        Server server = new Server("Server_1", "10.8.0.3", 5003, 5004, "Server_2");
     }
 
 

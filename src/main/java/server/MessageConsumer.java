@@ -49,6 +49,9 @@ public class MessageConsumer extends Thread {
                 if (receiverIP.equals(entry.getIp()) && receiverPort == entry.getPort()){
                     outPort = entry.getPort();
                     System.out.println(ANSI_CYAN + "Found corresponding outPort: " + outPort + ANSI_RESET);
+                } else {
+
+                    System.out.println("Unknown address. Message was discarded.");
                 }
             }
 
@@ -65,7 +68,6 @@ public class MessageConsumer extends Thread {
             }
 
 
-            System.out.println("Unknown address. Message was discarded.");
 
         }
     }
