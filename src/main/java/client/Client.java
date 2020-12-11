@@ -1,91 +1,120 @@
 package client;
 
+import JSON.JSONProducer;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import connection.Connection;
+import connection.ConnectionListener;
 import lombok.Data;
-import server.MessageWrapper;
-import server.routing.RoutingEntry;
-import server.routing.RoutingTable;
-import server.utils.RoutingInfoThread;
+import message.MessageWrapper;
+import routing.RoutingEntry;
+import utils.Utils;
 
-import static server.utils.ThreadColors.*;
+import static utils.Utils.ThreadColors.*;
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Timestamp;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @Data
-public class Client {
+public class Client extends Thread {
 
     private String myIP;
     private int myPort;
-    private String myUsername;
-    private RoutingTable myRoutingTable = new RoutingTable();
+    private String myName;
+
+    private Set<RoutingEntry> routingTable = new HashSet<>();
+    private LinkedBlockingQueue<String> incomingJSON = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<MessageWrapper> messages = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<Set<RoutingEntry>> newRoutingInfos = new LinkedBlockingQueue<>();
+    private Set<Connection> connections = new HashSet<>();
     private Socket socket;
+    private ServerSocket serverSocket;
     private BufferedReader keyboard;
     private PrintWriter out;
     private String message;
-    private String receiverIP;
-    private String receiverName;
-    private int receiverPort;
+
     private int startTTL = 20;
     private Gson gson = new Gson();
-    private ExecutorService service;
+    private ExecutorService threadPool = Executors.newCachedThreadPool();
+    private Scanner scanner = new Scanner(System.in);
 
 
-
-    public Client(String SERVER_IP, int PORT) {
-        connect(SERVER_IP, PORT);
+    public Client(int myServerPort) {
+        myPort = myServerPort;
     }
 
+    @Override
+    public void run() {
+        init();
+        listen(myPort);
+        getMyInfo();
+        while (true) whatsNext();
+    }
 
-    private void connect(String SERVER_IP, int port) {
+    public void listen(int myServerPort) {
         try {
-            socket = new Socket(SERVER_IP, port);
-            service = Executors.newFixedThreadPool(2);
-            service.execute(new ClientMessageConsumer(socket, this));
-            //service.execute(new ClientRoutingInfoThread(myRoutingTable));
-            keyboard = new BufferedReader(new InputStreamReader(System.in));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            serverSocket = new ServerSocket(myServerPort);
+            threadPool.execute(new ConnectionListener(connections, serverSocket));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        getMyInfo();
-        sendInitialRoutingInfo();
-        System.out.println(ANSI_CYAN + "ready for new Messages." + ANSI_RESET);
-        getReceiverInfo();
     }
 
-    private void messaging() {
-        System.out.println(ANSI_CYAN + "What message do your want to send to: " + receiverName + "(" + receiverIP  + ":" + receiverPort + ") ?" + ANSI_RESET);
-        System.out.print("> ");
+    private void init() {
+        threadPool.execute(new JSONProducer(this));
+        keyboard = new BufferedReader(new InputStreamReader(System.in));
+    }
+
+    private void sendMessage() {
+        String name = getReceiverName();
+        String[] split = getNewAddress().split(":");
+
+        Socket socket = Utils.getSocketToSend(routingTable, split[0], Integer.parseInt(split[1]), name);
+        if (socket == null) {
+            System.out.println("The given client is not reachable.");
+            return;
+        }
+
         try {
+            System.out.println("Enter the message: ");
             message = keyboard.readLine();
+            MessageWrapper mw = new MessageWrapper(0, split[0], Integer.parseInt(split[1]), name, myIP, myPort, myName, startTTL, System.currentTimeMillis() / 1000L, message);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            out.println(new Gson().toJson(mw));
         } catch (IOException e) {
             System.out.println(ANSI_CYAN + "keyboard.readline(); failed." + ANSI_RESET);
             e.printStackTrace();
         }
-        if (message.equals("quit")) {
-            closeConnection();
-            return;
-        }
-
-        out.println(buildJSONMessage(message));
-
-        getReceiverInfo();
     }
 
-    private String buildJSONMessage(String message) {
-        MessageWrapper messageWrapper = new MessageWrapper(0, receiverIP, receiverPort, receiverName, myIP, myPort, myUsername, startTTL, new Timestamp(System.currentTimeMillis()), message);
-        System.out.println(messageWrapper);
-        return gson.toJson(messageWrapper);
+    private void connect() {
+        String address = getNewAddress();
+        String[] split = address.split(":");
+        try {
+            socket = new Socket(split[0], Integer.parseInt(split[1]));
+            connections.add(new Connection(socket));
+            sendRoutingInfo(socket);
+        } catch (ConnectException e) {
+            System.out.println("Given address could not be reached. Try again.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Wrong format.");
+        }
+        System.out.println(ANSI_CYAN + "ready for new Messages." + ANSI_RESET);
+    }
+
+
+    private void showRoutingTable() {
+        System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(routingTable));
     }
 
     public void closeConnection() {
@@ -101,52 +130,53 @@ public class Client {
 
     public void getMyInfo() {
         try {
-            String hName = InetAddress.getLocalHost().getHostName();
-            InetAddress[] addrs = InetAddress.getAllByName(hName);
-            for (InetAddress addr : addrs) {
-                if (addr.getHostAddress().contains("10.8.0.")) {
-                    myIP = addr.getHostAddress();
-                    break;
-                }
-            }
-            myPort = socket.getLocalPort();
+            myIP = InetAddress.getLocalHost().getHostAddress();
             System.out.print("Enter your username: ");
-            myUsername = keyboard.readLine();
+            myName = keyboard.readLine();
             System.out.println(ANSI_CYAN + "Own IP: " + myIP + "\nOwn socket port: " + myPort + ANSI_RESET);
-            RoutingEntry entry = new RoutingEntry(myIP, myPort, myUsername, -1, null);
-            HashMap<String, RoutingEntry> table = new HashMap<>();
-            table.put(myIP + ":" + myPort, entry);
-            myRoutingTable = new RoutingTable(table);
+            RoutingEntry entry = new RoutingEntry(myIP, myPort, myName, 0, null);
+            routingTable.add(entry);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void sendInitialRoutingInfo() {
-        String routingInfo = myRoutingTable.getJSONTable();
-        System.out.println(ANSI_CYAN + "initial routing info from client: " + routingInfo + ANSI_RESET);
-        out.println(routingInfo);
-    }
-
-    public void getReceiverInfo()  {
+    public void sendRoutingInfo(Socket socket) {
         try {
-            System.out.println(ANSI_CYAN + "What is the receiver's username?" + ANSI_RESET);
-            receiverName = keyboard.readLine();
-            System.out.println(ANSI_CYAN + "What is the receiver's IP and Port? Format: <IP>:<PORT>" + ANSI_RESET);
-            String receiverDetails = keyboard.readLine();
-            String[] split = receiverDetails.split(":");
-            receiverIP = split[0];
-            receiverPort = Integer.parseInt(split[1]);
+            String routingInfo = new Gson().toJson(routingTable);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            out.println(routingInfo);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void whatsNext() {
+        try {
+            System.out.println("<1> Send message\n<2> establish new connection\n<3> show connections\n<4> quit");
+            String choice = keyboard.readLine().trim();
+
+            switch (choice) {
+                case "1" -> sendMessage();
+                case "2" -> connect();
+                case "3" -> showRoutingTable();
+                case "4" -> closeConnection();
+                default -> System.out.println("Try again.");
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        messaging();
     }
 
+    private String getNewAddress(){
+        System.out.print("<IP>:<PORT> : ");
+        return scanner.nextLine().trim();
+    }
 
-    public static void main(String[] args) {
-        Client client = new Client("10.8.0.3", 5003);
+    private String getReceiverName() {
+        System.out.println("Who do you want to send the message to?");
+        return scanner.nextLine().trim();
     }
 
 
