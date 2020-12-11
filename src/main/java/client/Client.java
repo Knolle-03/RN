@@ -1,27 +1,26 @@
 package client;
 
 import JSON.JSONProducer;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import connection.Connection;
 import connection.ConnectionListener;
-import lombok.Data;
 import message.MessageWrapper;
+
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import lombok.Data;
 import routing.RoutingEntry;
 import utils.Utils;
-
 import static utils.Utils.ThreadColors.*;
 
-
 import java.io.*;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.*;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+
 
 @Data
 public class Client extends Thread {
@@ -130,7 +129,11 @@ public class Client extends Thread {
 
     public void getMyInfo() {
         try {
-            myIP = InetAddress.getLocalHost().getHostAddress();
+            try(final DatagramSocket socket = new DatagramSocket()){
+                socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+                myIP = socket.getLocalAddress().getHostAddress();
+            }
+            //myIP = InetAddress.getLocalHost().getHostAddress();
             System.out.print("Enter your username: ");
             myName = keyboard.readLine();
             System.out.println(ANSI_CYAN + "Own IP: " + myIP + "\nOwn socket port: " + myPort + ANSI_RESET);

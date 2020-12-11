@@ -3,13 +3,15 @@ package utils;
 import com.google.gson.Gson;
 import routing.RoutingEntry;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import static utils.Utils.ThreadColors.ANSI_BLUE_BACKGROUND;
+import static utils.Utils.ThreadColors.ANSI_RESET;
 
 public class Utils {
 
@@ -98,6 +100,9 @@ public class Utils {
                 e.printStackTrace();
             }
         }
+    }
+    public static boolean isConnectionOpen(Socket socket) throws IOException {
+        return socket.getInetAddress().isReachable(500);
     }
 
     public static void removeCorrespondingEntries(Set<RoutingEntry> routingTable, Socket socket) {
