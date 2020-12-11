@@ -100,8 +100,15 @@ public class Utils {
         }
     }
 
-    public static void removeCorrespondingEntries(Set<RoutingEntry> routingTable, Socket socket) {
-        routingTable.removeIf(entry -> entry.getSocket() == socket);
+    public static boolean removeCorrespondingEntries(Set<RoutingEntry> routingTable, Socket socket) {
+        boolean updated = false;
+        for (RoutingEntry entry : routingTable) {
+            if (entry.getSocket() == socket) {
+                routingTable.remove(entry);
+                updated = true;
+            }
+        }
+        return updated;
     }
 
     public static class ThreadColors {
