@@ -4,7 +4,6 @@ import client.Client;
 import com.google.gson.Gson;
 import utils.Utils;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -34,13 +33,27 @@ public class MessageConsumer extends Thread {
                     System.out.println(ANSI_BLUE_BACKGROUND + "Could not send confirmation. Sending client not found." + ANSI_RESET);
                     return;
                 }
-
                 try {
-                    PrintWriter pr = new PrintWriter(socket.getOutputStream(), true);
-                    pr.println(new Gson().toJson(confirmation));
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    boolean open = Utils.isConnectionOpen(socket);
+                    if (!open){
+                        System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
+
+                    }
+                    else{
+                        try {
+                            PrintWriter pr = new PrintWriter(socket.getOutputStream(), true);
+                            pr.println(new Gson().toJson(confirmation));
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                } catch (IOException e){
+                    System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
+                    System.out.println("error: \n" + e);
                 }
+
 
             } else {
                 System.out.println(mw.getFromName() + " received your message.");

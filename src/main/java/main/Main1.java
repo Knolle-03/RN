@@ -2,6 +2,9 @@ package main;
 
 import client.Client;
 
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+
 public class Main1 {
 
     public static void main(String[] args) {
@@ -10,6 +13,7 @@ public class Main1 {
 //        for (int i = 0; i < num; i++) {
 //            clients.execute(new Client(5000 + i));
 //        }
+
 
         Client client = new Client(5001);
         client.start();
