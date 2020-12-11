@@ -100,6 +100,10 @@ public class Utils {
         }
     }
 
+    public static void removeCorrespondingEntries(Set<RoutingEntry> routingTable, Socket socket) {
+        routingTable.removeIf(entry -> entry.getSocket() == socket);
+    }
+
     public static class ThreadColors {
 
         public static final String ANSI_RESET = "\u001B[0m";
