@@ -23,7 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 
 @Data
-public class Client extends Thread {
+public class Client {
 
     private String myIP;
     private int myPort;
@@ -33,7 +33,7 @@ public class Client extends Thread {
     private LinkedBlockingQueue<String> incomingJSON = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<MessageWrapper> messages = new LinkedBlockingQueue<>();
     private LinkedBlockingQueue<Set<RoutingEntry>> newRoutingInfos = new LinkedBlockingQueue<>();
-    private Set<Connection> connections = new HashSet<>();
+    private LinkedBlockingQueue<Connection> connections = new LinkedBlockingQueue<>();
     private Socket socket;
     private ServerSocket serverSocket;
     private BufferedReader keyboard;
@@ -50,8 +50,7 @@ public class Client extends Thread {
         myPort = myServerPort;
     }
 
-    @Override
-    public void run() {
+    public void start() {
         init();
         listen(myPort);
         getMyInfo();
@@ -85,9 +84,26 @@ public class Client extends Thread {
         try {
             System.out.println("Enter the message: ");
             message = keyboard.readLine();
-            MessageWrapper mw = new MessageWrapper(0, split[0], Integer.parseInt(split[1]), name, myIP, myPort, myName, startTTL, System.currentTimeMillis() / 1000L, message);
-            out = new PrintWriter(socket.getOutputStream(), true);
-            out.println(new Gson().toJson(mw));
+            MessageWrapper mw = new MessageWrapper("0", split[0], Integer.parseInt(split[1]), name, myIP, myPort, myName, startTTL, System.currentTimeMillis() / 1000L, message);
+
+            try {
+                boolean open = Utils.isConnectionOpen(socket);
+                System.out.println("Open in send: " + open);
+                if (!open){
+                    System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
+                    boolean updated = Utils.removeCorrespondingEntries(getRoutingTable(), socket);
+                    if (updated) Utils.propagateRoutingTable(getRoutingTable());
+                } else {
+                    System.out.println("Sending msg: " + message);
+                    out = new PrintWriter(socket.getOutputStream(), true);
+                    System.out.println("Socket: " + socket);
+                    out.println(new Gson().toJson(mw));
+                }
+            } catch (IOException e){
+                System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
+                e.printStackTrace();
+            }
+
         } catch (IOException e) {
             System.out.println(ANSI_CYAN + "keyboard.readline(); failed." + ANSI_RESET);
             e.printStackTrace();

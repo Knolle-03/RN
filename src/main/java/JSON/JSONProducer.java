@@ -12,8 +12,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class JSONProducer extends Thread {
 
     private Client client;
-    private Set<Connection> connections;
-    private LinkedBlockingQueue<String> incomingJSON;
+    private LinkedBlockingQueue<Connection> connections;
+    private final LinkedBlockingQueue<String> incomingJSON;
     private ExecutorService threadPool;
 
     public JSONProducer(Client client) {
@@ -27,7 +27,6 @@ public class JSONProducer extends Thread {
     public void run() {
         while (!isInterrupted()) {
             for (Connection c : connections) {
-
                 try {
                     // test if connection still exists
 //                    if (!c.getReader().ready() && c.getReader().read() == -1) {
@@ -38,7 +37,10 @@ public class JSONProducer extends Thread {
                     if (c.getReader().ready()) {
                         Socket sendingSocket = c.getSocket();
                         String msg = c.getReader().readLine();
+                        System.out.println("New msg: " + msg + " on socket: " + c.getSocket());
+
                         incomingJSON.put(msg);
+
                         new JSONConsumer(client, sendingSocket).start();
                     }
                 } catch (IOException e) {

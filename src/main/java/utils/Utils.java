@@ -102,7 +102,7 @@ public class Utils {
         }
     }
     public static boolean isConnectionOpen(Socket socket) throws IOException {
-        return socket.getInetAddress().isReachable(500);
+        return true;
     }
 
     public static boolean removeCorrespondingEntries(Set<RoutingEntry> routingTable, Socket socket) {

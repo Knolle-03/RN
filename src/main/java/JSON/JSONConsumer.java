@@ -18,16 +18,12 @@ public class JSONConsumer extends Thread {
 
     private Client client;
     private LinkedBlockingQueue<String> incomingJSON;
-    private LinkedBlockingQueue<MessageWrapper> messages;
-    private LinkedBlockingQueue<Set<RoutingEntry>> routingTables;
     private ExecutorService threadPool;
     private Socket socket;
 
     public JSONConsumer(Client client, Socket socket) {
         this.client = client;
         this.incomingJSON = client.getIncomingJSON();
-        this.messages = client.getMessages();
-        this.routingTables = client.getNewRoutingInfos();
         this.threadPool = client.getThreadPool();
         this.socket = socket;
     }

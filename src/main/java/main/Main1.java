@@ -15,7 +15,7 @@ public class Main1 {
 //        }
 
 
-        Client client = new Client(5001);
+        Client client = new Client(6000);
         client.start();
     }
 

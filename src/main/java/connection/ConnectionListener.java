@@ -3,13 +3,14 @@ package connection;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnectionListener extends Thread {
 
     ServerSocket serverSocket;
-    Set<Connection> connections;
+    LinkedBlockingQueue<Connection> connections;
 
-    public ConnectionListener(Set<Connection> connections, ServerSocket serverSocket) {
+    public ConnectionListener(LinkedBlockingQueue<Connection> connections, ServerSocket serverSocket) {
         this.connections = connections;
         this.serverSocket = serverSocket;
     }
