@@ -2,9 +2,10 @@ package connection;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
+
+// Handles incoming connections
 public class ConnectionListener extends Thread {
 
     ServerSocket serverSocket;

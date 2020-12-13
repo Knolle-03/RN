@@ -72,7 +72,8 @@ public class Utils {
         // if there is non return null
         if (best == null) return null;
 
-        // if there is one, compare the hop count to other entries
+
+        // if there is one, compare the hop count to other entries (Not really necessary since only one entry is stored per connection)
         for (RoutingEntry entry : routingTable) {
             if (entry.getIp().equals(ip) && entry.getPort() == port && entry.getName().equals(name) && best.getHopCount() > entry.getHopCount()) best = entry;
         }
@@ -101,6 +102,8 @@ public class Utils {
             }
         }
     }
+
+    // remains of an attempt to check if the remote Client is still available
     public static boolean isConnectionOpen(Socket socket) throws IOException {
         return true;
     }
@@ -116,6 +119,7 @@ public class Utils {
         return updated;
     }
 
+    // colors to differentiate between console outputs from threads
     public static class ThreadColors {
 
         public static final String ANSI_RESET = "\u001B[0m";

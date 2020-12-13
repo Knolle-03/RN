@@ -5,22 +5,19 @@ import connection.Connection;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class JSONProducer extends Thread {
 
-    private Client client;
-    private LinkedBlockingQueue<Connection> connections;
+    private final Client client;
+    private final LinkedBlockingQueue<Connection> connections;
     private final LinkedBlockingQueue<String> incomingJSON;
-    private ExecutorService threadPool;
 
     public JSONProducer(Client client) {
         this.client = client;
         this.connections = client.getConnections();
         this.incomingJSON = client.getIncomingJSON();
-        this.threadPool = client.getThreadPool();
     }
 
     @Override
@@ -28,12 +25,6 @@ public class JSONProducer extends Thread {
         while (!isInterrupted()) {
             for (Connection c : connections) {
                 try {
-                    // test if connection still exists
-//                    if (!c.getReader().ready() && c.getReader().read() == -1) {
-//                        System.out.println("Client left.");
-//                        connections.remove(c);
-//                        continue;
-//                    }
                     if (c.getReader().ready()) {
                         Socket sendingSocket = c.getSocket();
                         String msg = c.getReader().readLine();

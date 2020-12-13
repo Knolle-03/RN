@@ -9,9 +9,9 @@ import static utils.Utils.ThreadColors.*;
 
 public class RoutingConsumer extends Thread {
 
-    private Set<RoutingEntry> ownRoutingTable;
-    private Set<RoutingEntry> newRoutingInfo;
-    private Socket neighbourSocket;
+    private final Set<RoutingEntry> ownRoutingTable;
+    private final Set<RoutingEntry> newRoutingInfo;
+    private final Socket neighbourSocket;
 
     public RoutingConsumer(Set<RoutingEntry> ownRoutingTable, Set<RoutingEntry> newRoutingInfo, Socket neighbourSocket) {
         this.ownRoutingTable = ownRoutingTable;

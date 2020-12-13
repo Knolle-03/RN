@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
+// wrapper class for outgoing messages
 public class MessageWrapper {
     private String  answerFlag;
     private String toIP;

@@ -21,28 +21,29 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-
+// for getters and setter
 @Data
 public class Client {
-
+    // own routing info
     private String myIP;
     private int myPort;
     private String myName;
-
+    // table with all available routing info
     private Set<RoutingEntry> routingTable = new HashSet<>();
+    // storage for incoming JSOnm strings
     private LinkedBlockingQueue<String> incomingJSON = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<MessageWrapper> messages = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<Set<RoutingEntry>> newRoutingInfos = new LinkedBlockingQueue<>();
+    // storage for all open connections
     private LinkedBlockingQueue<Connection> connections = new LinkedBlockingQueue<>();
-    private Socket socket;
+    // listening serverSocket
     private ServerSocket serverSocket;
+    // reader for client input
     private BufferedReader keyboard;
+    // writer for output
     private PrintWriter out;
-    private String message;
-
+    // time to live for outgoing messages
     private int startTTL = 20;
-    private Gson gson = new Gson();
     private ExecutorService threadPool = Executors.newCachedThreadPool();
+    // second reader for client input (whoops)
     private Scanner scanner = new Scanner(System.in);
 
 
@@ -50,13 +51,16 @@ public class Client {
         myPort = myServerPort;
     }
 
+    // start client
     public void start() {
         init();
         listen(myPort);
         getMyInfo();
+        // can actually be completed without an exception (closeConnection())
         while (true) whatsNext();
     }
 
+    // start thread to listen for new connections
     public void listen(int myServerPort) {
         try {
             serverSocket = new ServerSocket(myServerPort);
@@ -66,11 +70,13 @@ public class Client {
         }
     }
 
+    // start message Producer and client input
     private void init() {
         threadPool.execute(new JSONProducer(this));
         keyboard = new BufferedReader(new InputStreamReader(System.in));
     }
 
+    // send message to client
     private void sendMessage() {
         String name = getReceiverName();
         String[] split = getNewAddress().split(":");
@@ -83,7 +89,7 @@ public class Client {
 
         try {
             System.out.println("Enter the message: ");
-            message = keyboard.readLine();
+            String message = keyboard.readLine();
             MessageWrapper mw = new MessageWrapper("0", split[0], Integer.parseInt(split[1]), name, myIP, myPort, myName, startTTL, System.currentTimeMillis() / 1000L, message);
 
             try {
@@ -110,11 +116,13 @@ public class Client {
         }
     }
 
+
+    // establish new connection
     private void connect() {
         String address = getNewAddress();
         String[] split = address.split(":");
         try {
-            socket = new Socket(split[0], Integer.parseInt(split[1]));
+            Socket socket = new Socket(split[0], Integer.parseInt(split[1]));
             connections.add(new Connection(socket));
             sendRoutingInfo(socket);
         } catch (ConnectException e) {
@@ -127,22 +135,27 @@ public class Client {
         System.out.println(ANSI_CYAN + "ready for new Messages." + ANSI_RESET);
     }
 
-
+    // print "pretty" routing table
     private void showRoutingTable() {
         System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(routingTable));
     }
 
+    // close own connection
     public void closeConnection() {
         try {
-            socket.close();
+            for (Connection connection : connections) {
+                connection.getSocket().close();
+            }
+            serverSocket.close();
         } catch (IOException e) {
-            System.out.println(ANSI_BLACK + "Failed closing connection to server." + ANSI_RESET);
+            System.out.println(ANSI_BLACK + "Failed closing connections." + ANSI_RESET);
             e.printStackTrace();
             System.exit(1);
         }
         System.exit(0);
     }
 
+    // set own info
     public void getMyInfo() {
         try {
             try(final DatagramSocket socket = new DatagramSocket()){
@@ -160,6 +173,7 @@ public class Client {
         }
     }
 
+
     public void sendRoutingInfo(Socket socket) {
         try {
             String routingInfo = new Gson().toJson(routingTable);
@@ -170,6 +184,7 @@ public class Client {
         }
     }
 
+    // looping menu
     public void whatsNext() {
         try {
             System.out.println("<1> Send message\n<2> establish new connection\n<3> show connections\n<4> quit");
