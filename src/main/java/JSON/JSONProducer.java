@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static utils.Utils.ThreadColors.*;
+
 public class JSONProducer extends Thread {
 
     private final Client client;
@@ -35,10 +37,10 @@ public class JSONProducer extends Thread {
                         new JSONConsumer(client, sendingSocket).start();
                     }
                 } catch (IOException e) {
-                    System.out.println("Reader of connection: " + c + " is not available.");
+                    System.out.println(ANSI_GREEN_BACKGROUND + "Reader of connection: " + c + " is not available." + ANSI_RESET);
                     e.printStackTrace();
                 } catch (InterruptedException e) {
-                    System.out.println("Unable to put new message in queue.");
+                    System.out.println(ANSI_GREEN_BACKGROUND + "Unable to put new message in queue." + ANSI_RESET);
                     e.printStackTrace();
                 }
             }

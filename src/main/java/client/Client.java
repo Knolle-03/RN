@@ -111,7 +111,7 @@ public class Client {
             }
 
         } catch (IOException e) {
-            System.out.println(ANSI_CYAN + "keyboard.readline(); failed." + ANSI_RESET);
+            System.out.println(ANSI_BLUE_BACKGROUND + "keyboard.readline(); failed." + ANSI_RESET);
             e.printStackTrace();
         }
     }
@@ -126,13 +126,13 @@ public class Client {
             connections.add(new Connection(socket));
             sendRoutingInfo(socket);
         } catch (ConnectException e) {
-            System.out.println("Given address could not be reached. Try again.");
+            System.out.println(ANSI_BLUE_BACKGROUND + "Given address could not be reached. Try again." + ANSI_RESET);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Wrong format.");
+            System.out.println(ANSI_BLUE_BACKGROUND + "Wrong format." + ANSI_RESET);
         }
-        System.out.println(ANSI_CYAN + "ready for new Messages." + ANSI_RESET);
+        System.out.println(ANSI_BLUE_BACKGROUND + "ready for new Messages." + ANSI_RESET);
     }
 
     // print "pretty" routing table
@@ -148,7 +148,7 @@ public class Client {
             }
             serverSocket.close();
         } catch (IOException e) {
-            System.out.println(ANSI_BLACK + "Failed closing connections." + ANSI_RESET);
+            System.out.println(ANSI_BLUE_BACKGROUND + "Failed closing connections." + ANSI_RESET);
             e.printStackTrace();
             System.exit(1);
         }
@@ -165,7 +165,7 @@ public class Client {
             //myIP = InetAddress.getLocalHost().getHostAddress();
             System.out.print("Enter your username: ");
             myName = keyboard.readLine();
-            System.out.println(ANSI_CYAN + "Own IP: " + myIP + "\nOwn socket port: " + myPort + ANSI_RESET);
+            System.out.println(ANSI_BLUE + "Own IP: " + myIP + "\nOwn socket port: " + myPort + ANSI_RESET);
             RoutingEntry entry = new RoutingEntry(myIP, myPort, myName, 0, null);
             routingTable.add(entry);
         } catch (IOException e) {

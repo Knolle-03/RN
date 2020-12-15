@@ -42,6 +42,7 @@ public class Utils {
                 while (it.hasNext()) {
                     if (own.equals(entry) && own.getHopCount() > entry.getHopCount() + 1) {
                         own.setHopCount(entry.getHopCount() + 1);
+                        own.setSocket(socket);
                         updated = true;
                     }
                     own = it.next();
