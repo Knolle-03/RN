@@ -10,8 +10,8 @@
         <module name="RN" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="RN" target="1.14" />
+    <bytecodeTargetLevel target="11">
+      <module name="RN" target="14" />
     </bytecodeTargetLevel>
   </component>
 </project>

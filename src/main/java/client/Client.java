@@ -45,6 +45,7 @@ public class Client {
     private ExecutorService threadPool = Executors.newCachedThreadPool();
     // second reader for client input (whoops)
     private Scanner scanner = new Scanner(System.in);
+    private String message;
 
 
     public Client(int myServerPort) {
@@ -81,38 +82,56 @@ public class Client {
         String name = getReceiverName();
         String[] split = getNewAddress().split(":");
 
-        Socket socket = Utils.getSocketToSend(routingTable, split[0], Integer.parseInt(split[1]), name);
-        if (socket == null) {
-            System.out.println("The given client is not reachable.");
-            return;
-        }
-
-        try {
+        if (name.equals(myName) && split[0].equals(myIP) && Integer.parseInt(split[1]) == myPort) {
+            System.out.println("Your really want to send a message to yourself? Ok...");
             System.out.println("Enter the message: ");
-            String message = keyboard.readLine();
-            MessageWrapper mw = new MessageWrapper("0", split[0], Integer.parseInt(split[1]), name, myIP, myPort, myName, startTTL, System.currentTimeMillis() / 1000L, message);
-
             try {
-                boolean open = Utils.isConnectionOpen(socket);
-                System.out.println("Open in send: " + open);
-                if (!open){
-                    System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
-                    boolean updated = Utils.removeCorrespondingEntries(getRoutingTable(), socket);
-                    if (updated) Utils.propagateRoutingTable(getRoutingTable());
-                } else {
-                    System.out.println("Sending msg: " + message);
-                    out = new PrintWriter(socket.getOutputStream(), true);
-                    System.out.println("Socket: " + socket);
-                    out.println(new Gson().toJson(mw));
-                }
-            } catch (IOException e){
-                System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
+                message = keyboard.readLine();
+                System.out.println("Message from: YOU: " + message);
+                System.out.println("Here you go. happy?");
+            } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else {
+            Socket socket = null;
+            try {
+                socket = Utils.getSocketToSend(routingTable, split[0], Integer.parseInt(split[1]), name);
+                if (socket == null) {
+                    System.out.println("The given client is not reachable.");
+                    return;
+                }
+            } catch (ArrayIndexOutOfBoundsException e) {
+                System.out.println("Wrong format.");
+            }
 
-        } catch (IOException e) {
-            System.out.println(ANSI_BLUE_BACKGROUND + "keyboard.readline(); failed." + ANSI_RESET);
-            e.printStackTrace();
+
+            try {
+                System.out.println("Enter the message: ");
+                String message = keyboard.readLine();
+                MessageWrapper mw = new MessageWrapper("0", split[0], Integer.parseInt(split[1]), name, myIP, myPort, myName, startTTL, System.currentTimeMillis() / 1000L, message);
+
+                try {
+                    boolean open = Utils.isConnectionOpen(socket);
+                    System.out.println("Open in send: " + open);
+                    if (!open) {
+                        System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
+                        boolean updated = Utils.removeCorrespondingEntries(getRoutingTable(), socket);
+                        if (updated) Utils.propagateRoutingTable(getRoutingTable());
+                    } else {
+                        System.out.println("Sending msg: " + message);
+                        out = new PrintWriter(socket.getOutputStream(), true);
+                        System.out.println("Socket: " + socket);
+                        out.println(new Gson().toJson(mw));
+                    }
+                } catch (IOException e) {
+                    System.out.println(ANSI_BLUE_BACKGROUND + "Server no longer available" + ANSI_RESET);
+                    e.printStackTrace();
+                }
+
+            } catch (IOException e) {
+                System.out.println(ANSI_BLUE_BACKGROUND + "keyboard.readline(); failed." + ANSI_RESET);
+                e.printStackTrace();
+            }
         }
     }
 
