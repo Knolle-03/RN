@@ -6,8 +6,9 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
+// wrapper class for outgoing messages
 public class MessageWrapper {
-    private int answerFlag;
+    private String  answerFlag;
     private String toIP;
     private int toPort;
     private String toName;

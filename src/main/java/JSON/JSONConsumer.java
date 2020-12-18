@@ -16,18 +16,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class JSONConsumer extends Thread {
 
-    private Client client;
-    private LinkedBlockingQueue<String> incomingJSON;
-    private LinkedBlockingQueue<MessageWrapper> messages;
-    private LinkedBlockingQueue<Set<RoutingEntry>> routingTables;
-    private ExecutorService threadPool;
-    private Socket socket;
+    private final Client client;
+    private final LinkedBlockingQueue<String> incomingJSON;
+    private final ExecutorService threadPool;
+    private final Socket socket;
 
     public JSONConsumer(Client client, Socket socket) {
         this.client = client;
         this.incomingJSON = client.getIncomingJSON();
-        this.messages = client.getMessages();
-        this.routingTables = client.getNewRoutingInfos();
         this.threadPool = client.getThreadPool();
         this.socket = socket;
     }

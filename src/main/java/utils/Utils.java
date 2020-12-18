@@ -42,6 +42,7 @@ public class Utils {
                 while (it.hasNext()) {
                     if (own.equals(entry) && own.getHopCount() > entry.getHopCount() + 1) {
                         own.setHopCount(entry.getHopCount() + 1);
+                        own.setSocket(socket);
                         updated = true;
                     }
                     own = it.next();
@@ -72,7 +73,8 @@ public class Utils {
         // if there is non return null
         if (best == null) return null;
 
-        // if there is one, compare the hop count to other entries
+
+        // if there is one, compare the hop count to other entries (Not really necessary since only one entry is stored per connection)
         for (RoutingEntry entry : routingTable) {
             if (entry.getIp().equals(ip) && entry.getPort() == port && entry.getName().equals(name) && best.getHopCount() > entry.getHopCount()) best = entry;
         }
@@ -101,14 +103,24 @@ public class Utils {
             }
         }
     }
+
+    // remains of an attempt to check if the remote Client is still available
     public static boolean isConnectionOpen(Socket socket) throws IOException {
-        return socket.getInetAddress().isReachable(500);
+        return true;
     }
 
-    public static void removeCorrespondingEntries(Set<RoutingEntry> routingTable, Socket socket) {
-        routingTable.removeIf(entry -> entry.getSocket() == socket);
+    public static boolean removeCorrespondingEntries(Set<RoutingEntry> routingTable, Socket socket) {
+        boolean updated = false;
+        for (RoutingEntry entry : routingTable) {
+            if (entry.getSocket() == socket) {
+                routingTable.remove(entry);
+                updated = true;
+            }
+        }
+        return updated;
     }
 
+    // colors to differentiate between console outputs from threads
     public static class ThreadColors {
 
         public static final String ANSI_RESET = "\u001B[0m";
