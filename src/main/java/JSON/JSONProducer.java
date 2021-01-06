@@ -2,9 +2,11 @@ package JSON;
 
 import client.Client;
 import connection.Connection;
+import utils.Utils;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,20 +29,24 @@ public class JSONProducer extends Thread {
         while (!isInterrupted()) {
             for (Connection c : connections) {
                 try {
-                    if (c.getReader().ready()) {
-                        Socket sendingSocket = c.getSocket();
-                        String msg = c.getReader().readLine();
-                        System.out.println("New msg: " + msg + " on socket: " + c.getSocket());
+                    String msg = c.getReader().readLine();
+                    System.out.println("....");
+                    incomingJSON.put(msg);
+                    new JSONConsumer(client, c.getSocket()).start();
+                    System.out.println("consumer started.");
 
-                        incomingJSON.put(msg);
-
-                        new JSONConsumer(client, sendingSocket).start();
+                }
+                catch (SocketTimeoutException ignored) {}
+                catch (IOException | NullPointerException  e) {
+                    System.out.println(ANSI_RED_BACKGROUND + "Connection: " + c + " is not available." + ANSI_RESET);
+                    if (connections.remove(c)) {
+                        Utils.removeCorrespondingEntries(client.getRoutingTable(), c.getSocket());
+                        Utils.propagateRoutingTable(client.getRoutingTable());
+                        System.out.println("Removed connection: " + c + " and updated routing table");
                     }
-                } catch (IOException e) {
-                    System.out.println(ANSI_GREEN_BACKGROUND + "Reader of connection: " + c + " is not available." + ANSI_RESET);
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    System.out.println(ANSI_GREEN_BACKGROUND + "Unable to put new message in queue." + ANSI_RESET);
+                }
+                catch (InterruptedException e) {
+                    System.out.println(ANSI_RED_BACKGROUND + "Unable to put new message in queue." + ANSI_RESET);
                     e.printStackTrace();
                 }
             }

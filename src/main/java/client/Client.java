@@ -176,6 +176,7 @@ public class Client {
 
     // set own info
     public void getMyInfo() {
+
         try {
             try(final DatagramSocket socket = new DatagramSocket()){
                 socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
